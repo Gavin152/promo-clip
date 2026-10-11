@@ -30,6 +30,7 @@ The dispatcher gives you:
 - Keep `start` exactly as the placeholder or existing file has it; the dispatcher wrote it from the timeline.
 - Every CLI call uses your private build so you never collide with the other writers:
   `node V/tools/cli.mjs <cmd> --project V --tag <SCENE> --scene <SCENE> …`
+- Run each command on its own with absolute paths — one `node …` per Bash call, no `cd … &&`, `;`, pipes or redirects — and read files with the Read tool. Single plain commands are what the user's permission rules allow for agents; anything compound gets denied.
 - In **adapt** mode the existing layout entries stay byte-for-byte as they are; add only the new keys.
 
 ## Loop
@@ -42,7 +43,7 @@ The dispatcher gives you:
 3. Read every still. Fix: text cut off or outside the vertical safe zone, text covered by another element, unreadably small text, empty frame areas, art floating or cropped, anything visible before its word.
 4. Repeat 1–3 until the stills read clearly and `layout` reports no errors — at most 3 rounds.
 
-A build error in your own file names its line; fix it. A note that another scene was "left out (did not compile)" is someone else's work in progress — carry on.
+A tool call that is denied stops you: report which call was denied, and put the scene you wrote so far in your report as a ```js block so the dispatcher can save it. A build error in your own file names its line; fix it. A note that another scene was "left out (did not compile)" is someone else's work in progress — carry on.
 
 ## Report
 

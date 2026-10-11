@@ -32,6 +32,14 @@ Then `build`. Done when it succeeds — every scene now has its correct start an
 
 **Choose the mode.** Parallel = one `scene-writer` agent per scene, all at once. Gated mode: ask "write N scenes in parallel (N agents) or one by one?". Auto mode: parallel when the film has more than 4 scenes, else one by one. Scenes being redone after a review or a change request follow the same choice.
 
+**Parallel preflight.** Agents run in the background and cannot ask the user for permission, so they only work when the session lets them write files and run the CLI. Before the first parallel dispatch of the session, send one `general-purpose` agent: "Write the file `V/.work/agent-check.txt` containing `ok` with the Write tool, then run `node V/tools/cli.mjs status --project V --json` as a single Bash command; report which calls were denied." If either was denied, tell the user once — parallel scene writing needs Claude Code in accept-edits mode (Shift+Tab, or `"defaultMode": "acceptEdits"` in settings) and an allow rule for the CLI, e.g. in `.claude/settings.local.json`:
+
+```json
+{ "permissions": { "defaultMode": "acceptEdits", "allow": ["Bash(node *)"] } }
+```
+
+— and continue one by one (gated mode: ask whether they want to change it and retry first).
+
 **Parallel.** Send one Agent call per scene in a single message (so they run concurrently), `subagent_type: "promo-clip:scene-writer"`, each prompt carrying:
 
 ```

@@ -26,6 +26,7 @@ Re-compose rather than scale:
 - **Groups that move together** (a chart with its route and pins, a phone with its overlay) keep their primary coordinates inside `grp(ctx, [dx, dy, s], fn)`; the layout entry holds only `[dx, dy, s]`.
 - `backdrop()` is cover-fit in every format — move its focus (`fx`, `fy`) so the important part stays in frame.
 - `art()` anchors bottom-centre: in a taller frame raise y so a character stands on something rather than floating mid-frame.
+- `flip: true` mirrors everything in the image, lettering included (a clapperboard, a shirt print) — flip only art without text, or ask the art stage for a second pose.
 - Leave the primary layout exactly as it was; the formats stage checks that its stills are unchanged.
 
 ## Composition

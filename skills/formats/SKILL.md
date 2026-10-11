@@ -16,7 +16,7 @@ Formats to add: every entry of `promo.json` `output.formats` except `output.prim
 
 ## 2. Adapt the scenes
 
-Same mode choice as the scenes stage (gated: ask; auto: parallel above 4 scenes).
+Same mode choice and parallel preflight as the scenes stage (gated: ask; auto: parallel above 4 scenes, when the preflight passes).
 
 **Parallel.** One Agent call per scene in a single message, `subagent_type: "promo-clip:scene-writer"`:
 

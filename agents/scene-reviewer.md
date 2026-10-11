@@ -20,7 +20,7 @@ With the shared build (the writers are done):
 2. Per format: `stills V/.work/review/r<round>/<format> --scenes --sheet --format <format> --size 720p --project V --no-build`, plus `stills … /beats <t …>` at the main events of every scene.
 3. Per format: `layout --format <format> --project V`.
 
-Read every sheet and still.
+Run each command on its own with absolute paths (no `cd … &&`, pipes or redirects) and read files with the Read tool. Read every sheet and still.
 
 ## Check — every item, every scene
 
