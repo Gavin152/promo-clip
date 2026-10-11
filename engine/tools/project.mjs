@@ -65,7 +65,9 @@ export async function setup({ dir, name, install = true, checkFirst = true, log 
   saveState(target, state);
   if (install) npmInstall(join(target, 'tools'), log);
   log(`created ${target} (engine ${ENGINE_VERSION})`);
-  return { created: true, project: target, state, deps };
+  // re-check against the video's own tools/ (the pre-check could only see the plugin's)
+  const finalDeps = checkFirst ? await checkDeps({ project: target, keyLoader: loadKey }) : [];
+  return { created: true, project: target, state, deps: finalDeps };
 }
 
 export async function check({ project, needKey = false }) {

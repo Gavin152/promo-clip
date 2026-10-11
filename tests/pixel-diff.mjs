@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // Pixel-diff checker for CI: compare rendered stills against reference stills.
 // Usage:
-//   node tests/pixel-diff.mjs <dir> <refdir> [--tol 8] [--out diffdir]
+//   node tests/pixel-diff.mjs <dir> <refdir> [--tol 8] [--out diffdir] [--project V]
 //
 // <dir>    - directory with newly rendered stills (.jpg or .png)
 // <refdir> - reference stills directory (same file names)
 // --tol    - per-channel max abs diff tolerance (default 8, matches GPU text-raster noise)
 // --out    - directory to write red-highlight diff images for failures (optional)
+// --project - video folder whose tools/ provides sharp (default: the nearest folder above <dir>
+//             with promo.json, else engine/tools — a marketplace plugin install has no node_modules)
 //
 // Exit 0 = all within tolerance, Exit 1 = one or more pairs exceeded tolerance.
 //
@@ -17,13 +19,26 @@
 //   still allow 8/255 for GPU raster noise). Use --tol 0 only for known-identical renders.
 import { readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { join, extname, dirname, resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import { parseArgs } from '../engine/tools/lib/args.mjs';
 
-// sharp lives in engine/tools/node_modules; load via createRequire from that package root
-const _req = createRequire(new URL('../engine/tools/package.json', import.meta.url));
-const sharp = _req('sharp');
+// sharp: from the video's tools/ (--project, or the nearest promo.json folder above <dir>), else
+// from engine/tools — whichever has it installed
+function loadSharp(dir, project) {
+  const roots = [];
+  if (project) roots.push(resolve(project));
+  for (let d = resolve(dir); ; d = dirname(d)) {
+    if (existsSync(join(d, 'promo.json'))) { roots.push(d); break; }
+    if (dirname(d) === d) break;
+  }
+  const pkgs = [...roots.map((r) => join(r, 'tools', 'package.json')), new URL('../engine/tools/package.json', import.meta.url)];
+  for (const pkg of pkgs) {
+    try { return createRequire(pkg)('sharp'); } catch { /* try the next */ }
+  }
+  throw new Error('sharp not found: pass --project <video folder> or run `npm install` in engine/tools');
+}
+let sharp;
 
 async function main() {
   const [dir, refdir, ...rest] = process.argv.slice(2);
@@ -34,6 +49,7 @@ async function main() {
   const { flags } = parseArgs(rest);
   const tol = parseInt(flags.tol ?? '8', 10);
   const outDir = flags.out ?? null;
+  sharp = loadSharp(dir, flags.project);
 
   if (outDir) mkdirSync(outDir, { recursive: true });
 

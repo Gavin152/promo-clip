@@ -35,7 +35,7 @@ Done when every scene reports layout errors 0 in every added format.
 
 ## 3. Review
 
-1. Primary unchanged: `stills .work/stills/<primary>-after --scenes --format <primary> --size 720p --png`, then `node "${CLAUDE_PLUGIN_ROOT}/tests/pixel-diff.mjs" V/.work/stills/<primary>-after V/.work/stills/<primary>-before`. A failing scene goes back to its writer: restore the primary entry.
+1. Primary unchanged: `stills .work/stills/<primary>-after --scenes --format <primary> --size 720p --png`, then `node "${CLAUDE_PLUGIN_ROOT}/tests/pixel-diff.mjs" V/.work/stills/<primary>-after V/.work/stills/<primary>-before --project V`. A failing scene goes back to its writer: restore the primary entry.
 2. One `promo-clip:scene-reviewer` with `PLUGIN`, `V`, all formats, round 1; route its requests as in the scenes stage (same agent via SendMessage, else a new writer in fix mode); round 2 at most.
 
 ## 4. Gate

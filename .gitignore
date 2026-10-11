@@ -7,3 +7,4 @@ assets/fonts.css
 js/media-data.js
 **/out/*.mp4
 .claude/worktrees/
+.claude/memories.md

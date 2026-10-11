@@ -16,13 +16,16 @@ const NODE_HINT = {
   win32: 'Install Node 20+ from https://nodejs.org (or `winget install OpenJS.NodeJS.LTS`).',
 };
 
-/** returns [{ name, ok, detail, hint? }] */
+/**
+ * returns [{ name, ok, detail, hint? }]. Packages are checked where they are used: the video's own
+ * tools/ when `project` has one (a marketplace plugin install has no node_modules), else the engine's.
+ */
 export async function checkDeps({ project, needKey = false, keyLoader } = {}) {
   const out = [];
   const major = Number(process.versions.node.split('.')[0]);
   out.push({ name: 'node', ok: major >= MIN_NODE, detail: `v${process.versions.node}`, ...(major >= MIN_NODE ? {} : { hint: hint(NODE_HINT) }) });
 
-  const toolsDir = join(ENGINE, 'tools');
+  const toolsDir = project && existsSync(join(project, 'tools', 'package.json')) ? join(project, 'tools') : join(ENGINE, 'tools');
   const req = createRequire(join(toolsDir, 'package.json'));
   const pkgs = ['esbuild', 'puppeteer-core', 'ffmpeg-static', 'sharp', 'qrcode', 'jsqr'];
   const missing = pkgs.filter((p) => { try { req.resolve(p); return false; } catch { return true; } });
