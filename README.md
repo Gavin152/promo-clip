@@ -12,7 +12,8 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/promo-clip-demo.mp4" width="720" alt="promo-clip demo video: a 35-second trailer that made itself"></a><br>
+  https://github.com/user-attachments/assets/0d76dc2d-d61b-42e9-b01a-48fdcea82cf8
+ <br>
   <sub>▶ <a href="docs/media/promo-clip-demo.mp4">Watch the 35-second demo</a>, made end to end with promo-clip (AI spend incl. all retakes: $1.08).</sub>
 </p>
 
