@@ -5,7 +5,7 @@
 - Phase 2 (CLI) done 2026-10-11 on branch `phase2-cli` (based on phase1-engine; neither merged to main). Acceptance verified: fresh `setup → vo import → vo timing --words → vo gaps → music import → mix → check → export --all → qa` with no API calls passes in 3 formats. Live smoke test 2026-10-11 (key in repo-root `.env`, git-ignored; scratch video `.work/smoke`): TTS 3.8 ($0.001), AssemblyAI STT ($0.0005), Lyria pro ($0.08), Nano Banana 2 image ($0.067, clean key/die-cut) all work; total $0.23.
 - Phase 3 (plugin) done 2026-10-11 on branch `phase3-plugin` (based on phase2-cli; nothing merged to main). Acceptance: headless `claude -p --plugin-dir <repo> "/promo-clip …"` in auto mode, $0 budget, own assets only → all 8 stages done, 3 formats × master/web, QA passed; 44 turns, ~3.5 min, ~$1.39 of Claude tokens (scratch run, not kept).
 - Phase 4 (scene agents) done 2026-10-11 on branch `phase4-agents` (based on phase3-plugin). Acceptance: 5-scene teaser about promo-clip itself (AI voice/music/art $0.43): preflight → 5 parallel `promo-clip:scene-writer` agents writing their own files → `scene-reviewer` round 1 → fixes sent back to the SAME writers via SendMessage → round 2 "ship". Scenes stage ≈ $10 of Claude tokens. Test video kept only in scratch.
-- Phase 5 (public polish: docs, cross-platform, licences, README demo, marketplace) not started.
+- Phase 5 (public polish) on branch `phase5-polish` (based on phase4-agents), 2026-10-11: docs, licences, README, marketplace, cross-platform CI all done; CI green on ubuntu/macos/windows. **Task 5e (self-promo demo clip in `examples/promo-clip-demo/`, linked from README) deferred by the user to a later session.** Remote: `git@github.com:Gavin152/promo-clip.git` (public, GitHub — overrides the global GitLab rule for this repo); `gh` works. Plan: merge the phase chain into main after phase 5.
 
 ## Engine layout and conventions (engine/)
 - `engine/js/` = browser engine (ESM, bundled by esbuild into `<video>/promo.bundle.js`, IIFE so file:// works). `engine/tools/` = Node CLI (`cli.mjs build | stills | export`), deps in `engine/tools/node_modules` (run `npm install` there).
@@ -21,7 +21,7 @@
 ## Fixture (fixtures/sample-15s)
 - `make-fixture.mjs` regenerates all placeholder assets deterministically: per-word procedural "babble" VO (exact word times, no espeak/STT), 120 BPM procedural loop → `track.mp3` via ffmpeg-static with the final hit placed on "now", sharp-rendered SVG art, QR via `qrcode`. ~15 s, 3 scenes, layouts for all 3 formats.
 - Verified 2026-10-11: builds; stills in 3 formats; exports 3 formats × 720p and 1080p (−14 LUFS); 4K vertical and 1080x1350 stills.
-- `ref/stills/{landscape,vertical,square}/*.png` — 9 PNG reference stills (lossless, 720p, `--png=true`) for pixel-diff baseline. GPU noise ≤8/255 between runs (tol=8).
+- Reference stills are per OS: `ref/stills/<process.platform>/{landscape,vertical,square}/*.png` (lossless 720p). Chrome rasterises glyphs differently per OS (macOS vs Linux max diff ~225) and even per CPU arch (Linux arm64 vs x86-64 max ~17), so Linux refs MUST be made under `podman run --platform linux/amd64 … node:22-bookworm` + apt chromium (= CI's container job); see header of `tests/make-refs.mjs`. darwin refs = this Mac. Integration test skips pixel-diff when the OS has no refs or `PIXEL_DIFF=0` (CI macOS/Windows runners). Tol 8 covers run-to-run noise on one machine only.
 - Fixture vertical 02-feature layout was moved inside the safe zone (tags y 1600); QA + CI now check all 3 formats. Fixture cues `duckDb -10` so `music check` passes.
 
 ## QA tools (tasks 2i+2j, 2026-10-11)
@@ -64,3 +64,12 @@
 - Agents get `PLUGIN` (plugin path) in their prompt — `${CLAUDE_PLUGIN_ROOT}` expansion is only documented for skills. Missing manifest image keys now warn once (`image()` in props.js).
 - Export loudness: computed pure gain to −14 LUFS + 4×-oversampled `alimiter` at −1.5 dBFS only when peaks would exceed −1.2 dBTP (loudnorm's linear pass also fell back to dynamic mode on peak-limited mixes and crashed with ffmpeg 6).
 - QA content guard (added after a user saw a film of empty placeholder scenes that had passed QA): `layout`/`qa` error on placeholder scenes (`__scenes[].placeholder`, empty `draw() {}`), warn when a scene's final frame has luminance stdev < 20 (blank paper 2–15, real scenes 35+); `build` warns about placeholders. Lesson: verify deliverables by sampling frames from the exported MP4, not separately rendered stills; and never leave a test video the user may open in a half-reset state.
+
+## Public polish (phase 5)
+- Docs in `docs/` (getting-started, providers, writing-scenes, costs) — reviewed against code; costs.md render times measured on the fixture (15 s film, master+web: 720p 10 s, 1080p 22 s, 4K 74 s on Apple Silicon).
+- Licences: MIT `LICENSE` (holder "promo-clip contributors") + font texts in `engine/assets/fonts/` (copied into every video by setup). **Permanent Marker is Apache-2.0, not OFL** (the design spec was wrong); Orbitron/Inter/Caveat OFL 1.1.
+- `.claude-plugin/marketplace.json` (marketplace `promo-clip`, plugin source `./`) → `/plugin marketplace add Gavin152/promo-clip` + `/plugin install promo-clip@promo-clip`. Plugin version 0.5.0. `claude plugin validate .` passes.
+- A marketplace install has NO node_modules in the plugin → `cli.mjs` lazy-imports every npm-dependent module (build, stills, export, qa, vo/music/art); setup/check/status/upgrade/mode/budget run dependency-free. Verified with a clean clone.
+- Cross-platform: Chrome discovery falls back to Edge (Windows/macOS/Linux); `--no-sandbox` automatically when root on Linux (containers) or `CHROME_NO_SANDBOX=1`; tests use `fileURLToPath` (never `URL.pathname`). CI (`.github/workflows/ci.yml`, `shell: bash` everywhere): unit + `cli check` on 3 OS + Node 20; integration in `node:22-bookworm` container (pixel-diff) and on macOS/Windows runners (pixel-diff off).
+- Placeholder scenes now carry `placeholder: true` (template in skills/scenes) in addition to the empty-`draw() {}` regex.
+- `mode`/`budget` without a value are read-only (they used to rewrite promo.json).
