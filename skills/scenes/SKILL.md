@@ -23,10 +23,10 @@ From `V/script.md` and `V/vo/timing.json` (word list with times; `assets/music/c
 For every `## NN-name` in the script without a scene file yet, write `V/scenes/NN-name.js`:
 
 ```js
-export default { start: (T) => T.sN, layout: { <primary key>: {} }, draw() {} };
+export default { placeholder: true, start: (T) => T.sN, layout: { <primary key>: {} }, draw() {} };
 ```
 
-Then `build`. Done when it succeeds — every scene now has its correct start and end, so writers can work in any order (a word missing from timing.json throws with its name: fix the word or its `nth`).
+`placeholder: true` marks the file as unwritten (QA fails on it); a writer replaces the whole file. Then `build`. Done when it succeeds — every scene now has its correct start and end, so writers can work in any order (a word missing from timing.json throws with its name: fix the word or its `nth`).
 
 ## 3. Write the scenes
 
