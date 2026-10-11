@@ -142,11 +142,14 @@ export function setMode(state, mode) {
   return state;
 }
 
+/** 'vertical' | '9:16' | 'portrait' … -> engine format name (unknown names pass through to fail validation) */
+export const formatName = (f) => ({ '16:9': 'landscape', wide: 'landscape', '9:16': 'vertical', portrait: 'vertical', story: 'vertical', '1:1': 'square' })[String(f).toLowerCase()] ?? String(f).toLowerCase();
+
 /** validates and sets output settings; any field may be omitted */
 export function setOutput(state, { formats, primary, sizes, fps } = {}, resolveSize) {
   const out = { ...state.output };
-  if (formats) out.formats = formats;
-  if (primary) out.primary = primary;
+  if (formats) out.formats = formats.map(formatName);
+  if (primary) out.primary = formatName(primary);
   if (sizes) out.sizes = sizes;
   if (fps != null) out.fps = Number(fps);
   for (const f of out.formats) if (!['landscape', 'vertical', 'square'].includes(f)) throw new Error(`unknown format ${f}`);

@@ -1,7 +1,16 @@
 # promo-clip
 
 Claude Code plugin for short animated promo videos: guided discovery, script, voice-over, music, art,
-scenes, format variants and export, in a hand-drawn paper-collage style. **Work in progress**: engine + CLI done, plugin skills next.
+scenes, format variants and export, in a hand-drawn paper-collage style. **Work in progress**: engine, CLI and plugin skills work end to end; parallel scene agents and public polish next.
+
+## Use it (development install)
+
+```sh
+claude --plugin-dir ~/path/to/promo-clip     # then, in Claude Code:
+/promo-clip                                  # guided: discover → script → voice → music → art → scenes → formats → export
+/promo-clip:status                           # where a video stands
+/promo-clip:music                            # redo one stage (later stages go stale and re-run)
+```
 
 ## Engine quick start (development)
 

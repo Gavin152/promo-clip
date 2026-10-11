@@ -86,3 +86,11 @@ test('atomic save + load round trip, no temp file left behind', () => {
   assert.match(readFileSync(join(dir, 'promo.json'), 'utf8'), /"discover"/);
   assert.throws(() => loadState(join(dir, 'missing')), /no promo.json/);
 });
+
+test('output accepts aspect-ratio aliases for formats', async () => {
+  const { formatName } = await import('../../engine/tools/lib/state.mjs');
+  assert.deepEqual(['16:9', '9:16', 'Portrait', '1:1', 'square'].map(formatName), ['landscape', 'vertical', 'vertical', 'square', 'square']);
+  const s = defaultState('t', '1');
+  setOutput(s, { formats: ['16:9', '9:16'], primary: 'portrait' });
+  assert.deepEqual([s.output.formats, s.output.primary], [['landscape', 'vertical'], 'vertical']);
+});

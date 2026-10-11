@@ -37,7 +37,7 @@ export async function stills(project, outDir, { times = [], scenes = false, form
   if (sheet && written.length) {
     sheetPath = join(outDir, 'sheet.jpg');
     const label = (w) => jobs.find((j) => join(outDir, j.file) === w.file).file.replace(/\.(jpg|png)$/, '');
-    await makeContactSheet(written.map((w) => ({ key: label(w), path: w.file, fullPath: w.file, meta: null })), sheetPath, { cols: Math.min(4, written.length) });
+    await makeContactSheet(written.map((w) => ({ key: label(w), path: w.file, fullPath: w.file, meta: null })), sheetPath, { cols: Math.min(info.size[0] >= info.size[1] ? 3 : 4, written.length), thumb: info.size[0] >= info.size[1] ? [560, 560] : [360, 560] });
     if (!quiet) console.log(`sheet -> ${sheetPath}`);
   }
   return { info, written, sheet: sheetPath };

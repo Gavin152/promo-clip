@@ -3,7 +3,8 @@
 ## Status
 - Phase 1 (engine extraction) done 2026-10-11 on branch `phase1-engine`.
 - Phase 2 (CLI) done 2026-10-11 on branch `phase2-cli` (based on phase1-engine; neither merged to main). Acceptance verified: fresh `setup → vo import → vo timing --words → vo gaps → music import → mix → check → export --all → qa` with no API calls passes in 3 formats. Live smoke test 2026-10-11 (key in repo-root `.env`, git-ignored; scratch video `.work/smoke`): TTS 3.8 ($0.001), AssemblyAI STT ($0.0005), Lyria pro ($0.08), Nano Banana 2 image ($0.067, clean key/die-cut) all work; total $0.23.
-- Phases 3–5 (plugin skills, scene agents, polish) not started.
+- Phase 3 (plugin) done 2026-10-11 on branch `phase3-plugin` (based on phase2-cli; nothing merged to main). Acceptance: headless `claude -p --plugin-dir <repo> "/promo-clip …"` in auto mode, $0 budget, own assets only → all 8 stages done, 3 formats × master/web, QA passed; 44 turns, ~3.5 min, ~$1.39 of Claude tokens (scratch run, not kept).
+- Phases 4–5 (parallel scene agents, public polish) not started.
 
 ## Engine layout and conventions (engine/)
 - `engine/js/` = browser engine (ESM, bundled by esbuild into `<video>/promo.bundle.js`, IIFE so file:// works). `engine/tools/` = Node CLI (`cli.mjs build | stills | export`), deps in `engine/tools/node_modules` (run `npm install` there).
@@ -46,3 +47,11 @@
 - music: beat-grid phase comb weighs the low-band onset envelope ×2 (mean-normalised) — plain spectral flux locked the fixture grid onto off-beat hi-hats (0.25 s off). The final hit is snapped to the strongest onset within ±0.3 s (button attack), not the grid. Fixture placement now within ~36 ms (test tolerance 0.06 s). `music mix`/`check` use `exportVideo(..., {audioOnly, stems})` which returns `stems` paths.
 - art: names/`--out`/`--name` restricted to `[A-Za-z0-9_-]`, `--ref` image files only (they're uploaded), manifest paths must stay inside the project.
 - Live-test findings (fixed): OpenRouter generation stats for audio appear only after ~5–10 s (poll up to ~20 s, else the spend is flagged `estimated`); STT writes brands as one word ("PromoClip" for "promo clip") → `joinCompounds()` in lib/vo-analyse.mjs splits/merges 2–3-word compounds (times split by letter count); Lyria picks its own length (gave 179 s) → `music generate` appends "about N seconds" (`targetSeconds()`: film length + 6 s, or `--seconds`), gave 41 s for 30.
+
+## Plugin (phase 3)
+- `.claude-plugin/plugin.json`; skills auto-discovered from `skills/`. `claude plugin validate .` passes (only warns that the dev CLAUDE.md isn't shipped context). Local test: `claude --plugin-dir ~/nmDev/promo-clip` (or `-p` headless).
+- Verified live: bare `/promo-clip` resolves to `skills/promo-clip` (the docs agent claimed it wouldn't); `/promo-clip:promo-clip` too. `${CLAUDE_PLUGIN_ROOT}` expands inside SKILL.md bodies.
+- Conductor + stage skills are user-invoked (`disable-model-invocation: true`), so the conductor can't fire them: it READS `${CLAUDE_PLUGIN_ROOT}/skills/<stage>/SKILL.md` and follows it, looping on `cli next --json`. Shared rules (video folder V, CLI with `--project V --json`, stage lifecycle start/done/fail, gates gated=AskUserQuestion / auto=`gate --by auto --why`, budget exit 3) live once in `skills/promo-clip/protocol.md`; every stage points there.
+- Stages use the VIDEO's CLI (`node V/tools/cli.mjs`, pinned engine); `setup`, `upgrade` and the version-comparing `status` use the PLUGIN's CLI (`node ${CLAUDE_PLUGIN_ROOT}/engine/tools/cli.mjs … --project V`).
+- `promo-craft` is the only model-invoked skill (reference): scene-api.md (checked against engine exports), layout.md, timing.md, providers.md, qa.md, theme.md (palette ROLES: `cyan` = primary brand accent, `navy/navy2` = dark brand surfaces, etc.).
+- CLI added for the skills: `layout [--format]` (layout check without export; overlap warnings include box rects), `stills --sheet` (one labelled image for gates, large thumbs), `art generate/process --kind backdrop` (full-bleed scene prompt, primary-format aspect, JPEG), `upgrade` backs up the old engine to `V/.work/engine-<old>/`, `output` accepts `16:9`/`9:16`/`portrait`/`1:1` aliases, `vo qa` reads timing.json-shaped word files, and audio-only builds (music mix/check) work before timeline.js/scenes exist (stub timeline) — the acceptance run hit that ordering bug.

@@ -143,25 +143,26 @@ export async function processImage(srcPath, destPath, { border = 14, maxSide = 9
 
 // ── contact sheet ─────────────────────────────────────────────────────────────
 
-const CELL_W = 280, CELL_H = 220; // px per cell
-const THUMB_W = 260, THUMB_H = 180; // thumbnail fit-inside area
-const LABEL_H = 30; // label strip below thumbnail
 const COLS_DEFAULT = 4;
 const BG = { r: 248, g: 248, b: 248, alpha: 1 };
+const LABEL_H = 30; // label strip below each thumbnail
+
+/** cell geometry for a thumbnail fit-inside box of thumbW x thumbH */
+const cells = (thumbW, thumbH) => ({ THUMB_W: thumbW, THUMB_H: thumbH, CELL_W: thumbW + 20, CELL_H: thumbH + LABEL_H + 10 });
 
 /** SVG label strip for one cell. */
-function labelSvg(text) {
+function labelSvg(text, CELL_W) {
   const safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${CELL_W}" height="${LABEL_H}">` +
     `<rect width="${CELL_W}" height="${LABEL_H}" fill="#e8e8e8"/>` +
-    `<text x="${CELL_W / 2}" y="${LABEL_H - 8}" font-family="monospace" font-size="11" ` +
+    `<text x="${CELL_W / 2}" y="${LABEL_H - 9}" font-family="monospace" font-size="14" ` +
     `text-anchor="middle" fill="#222">${safe}</text></svg>`
   );
 }
 
-/** Load a thumbnail buffer for one manifest entry; returns null on failure. */
-async function loadThumb(filePath) {
+/** Load a thumbnail buffer for one entry; returns null on failure. */
+async function loadThumb(filePath, THUMB_W, THUMB_H) {
   try {
     return await sharp(filePath)
       .resize(THUMB_W, THUMB_H, { fit: 'inside', background: BG })
@@ -174,15 +175,15 @@ async function loadThumb(filePath) {
 }
 
 /**
- * Build the contact sheet.
- * entries: [{ key, path, fullPath }] where fullPath is the absolute path to load.
- * outPath: where to write the JPEG.
+ * Build a contact sheet.
+ * entries: [{ key, path, fullPath, meta? }] where fullPath is the absolute path to load.
+ * thumb: fit-inside box per image (art sheets 260x180; still sheets pass a larger one).
  */
-export async function makeContactSheet(entries, outPath, { cols = COLS_DEFAULT } = {}) {
+export async function makeContactSheet(entries, outPath, { cols = COLS_DEFAULT, thumb = [260, 180] } = {}) {
   mkdirSync(dirname(outPath), { recursive: true });
+  const { THUMB_W, THUMB_H, CELL_W, CELL_H } = cells(thumb[0], thumb[1]);
 
   if (!entries.length) {
-    // blank sheet with a message
     const width = CELL_W * cols, height = CELL_H;
     const msg = Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
@@ -195,8 +196,6 @@ export async function makeContactSheet(entries, outPath, { cols = COLS_DEFAULT }
 
   const rows = Math.ceil(entries.length / cols);
   const totalW = CELL_W * cols, totalH = CELL_H * rows;
-
-  // white background
   const bg = await sharp({ create: { width: totalW, height: totalH, channels: 3, background: { r: 255, g: 255, b: 255 } } })
     .png().toBuffer();
 
@@ -206,27 +205,21 @@ export async function makeContactSheet(entries, outPath, { cols = COLS_DEFAULT }
     const cellX = col * CELL_W, cellY = row * CELL_H;
     const { key, fullPath, meta } = entries[idx];
 
-    // thumbnail
-    const thumb = await loadThumb(fullPath);
-    if (thumb) {
-      const tm = await sharp(thumb).metadata();
-      // centre within the THUMB area
-      const tx = cellX + Math.floor((CELL_W - tm.width) / 2);
-      const ty = cellY + Math.floor((THUMB_H - tm.height) / 2);
-      composites.push({ input: thumb, top: ty, left: tx });
+    const th = await loadThumb(fullPath, THUMB_W, THUMB_H);
+    if (th) {
+      const tm = await sharp(th).metadata();
+      composites.push({ input: th, top: cellY + Math.floor((THUMB_H - tm.height) / 2), left: cellX + Math.floor((CELL_W - tm.width) / 2) });
     } else {
-      // placeholder for SVG or unreadable image
+      // placeholder for an unreadable image
       const ph = Buffer.from(
         `<svg xmlns="http://www.w3.org/2000/svg" width="${THUMB_W}" height="${THUMB_H}">` +
         `<rect width="${THUMB_W}" height="${THUMB_H}" fill="#ddd" rx="4"/>` +
-        `<text x="${THUMB_W / 2}" y="${THUMB_H / 2 + 5}" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#888">SVG</text></svg>`
+        `<text x="${THUMB_W / 2}" y="${THUMB_H / 2 + 5}" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#888">?</text></svg>`
       );
       composites.push({ input: ph, top: cellY, left: cellX + Math.floor((CELL_W - THUMB_W) / 2) });
     }
-
-    // label
     const dims = meta ? ` (${meta.width}×${meta.height})` : '';
-    composites.push({ input: labelSvg(`${key}${dims}`), top: cellY + THUMB_H, left: cellX });
+    composites.push({ input: labelSvg(`${key}${dims}`, CELL_W), top: cellY + THUMB_H, left: cellX });
   }
 
   await sharp(bg).composite(composites).jpeg({ quality: 88 }).toFile(outPath);
