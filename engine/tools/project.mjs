@@ -124,11 +124,14 @@ export function gate(project, stageName, choice, { by = 'human', why = '' } = {}
   return updateState(project, (s) => { recordGate(s, stageName, choice, by, why); return s.gates.at(-1); });
 }
 
+// show-only calls (no value) read promo.json without rewriting it
 export function mode(project, m) {
-  return updateState(project, (s) => (m ? setMode(s, m).mode : s.mode));
+  if (!m) return loadState(project).mode;
+  return updateState(project, (s) => setMode(s, m).mode);
 }
 
 export function budget(project, usd) {
+  if (usd == null) return loadState(project).budget;
   return updateState(project, (s) => {
     if (usd != null) {
       const v = Number(usd);
