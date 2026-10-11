@@ -1,0 +1,86 @@
+{
+  "_note": "Model IDs + fallbacks per need, all via OpenRouter (one key: OPENROUTER_API_KEY). Prices are USD estimates for the budget check only; the recorded spend uses OpenRouter's actual generation cost when it is reported. Model IDs checked against openrouter.ai/api/v1/models on 2026-10-11. promo.json \"provider_overrides\" can replace any field per project, e.g. { \"tts\": { \"default\": \"…\" } }.",
+  "tts": {
+    "default": "google/gemini-3.8-flash-tts",
+    "fallbacks": ["google/gemini-3.1-flash-tts-preview", "microsoft/mai-voice-2"],
+    "audition": ["google/gemini-3.8-flash-tts", "google/gemini-3.1-flash-tts-preview"],
+    "voices": {
+      "google/gemini-3.8-flash-tts": ["Aoede", "Kore", "Leda", "Zephyr", "Puck", "Charon", "Fenrir", "Orus"],
+      "google/gemini-3.1-flash-tts-preview": ["Aoede", "Kore", "Leda", "Zephyr", "Puck", "Charon", "Fenrir", "Orus"],
+      "microsoft/mai-voice-2": ["Harper"]
+    },
+    "defaultVoice": "Aoede",
+    "via": "openrouter",
+    "endpoint": "/audio/speech",
+    "output": "pcm",
+    "sample_rate": 24000,
+    "prices": {
+      "google/gemini-3.8-flash-tts": { "per_char": 0.000016 },
+      "google/gemini-3.1-flash-tts-preview": { "per_char": 0.000035 },
+      "microsoft/mai-voice-2": { "per_char": 0.000022 }
+    },
+    "gotchas": [
+      "Plain-prose directions are read aloud; put style in [tags]",
+      "An inline tag at the opening ([excited] First line…) sets the energy",
+      "Output is raw PCM 24 kHz s16le mono",
+      "Takes sometimes hallucinate or drop words; always diff the STT transcript against the script"
+    ]
+  },
+  "music": {
+    "default": "google/lyria-3-pro-preview",
+    "fallbacks": ["google/lyria-3-clip-preview"],
+    "via": "openrouter",
+    "endpoint": "/chat/completions",
+    "output": "mp3",
+    "prices": {
+      "google/lyria-3-pro-preview": { "per_generation": 0.08 },
+      "google/lyria-3-clip-preview": { "per_generation": 0.04 }
+    },
+    "gotchas": [
+      "Ignores the requested BPM",
+      "Drifts into retro funk/disco when a long brief leads the prompt; use a style-only prompt",
+      "Tracks have no hard ending; place the music on the onset of the last chord",
+      "Zero-data-retention (ZDR) accounts may be blocked; the next fallback is tried"
+    ]
+  },
+  "images": {
+    "default": "google/gemini-3.1-flash-image",
+    "fallbacks": ["google/gemini-3-pro-image"],
+    "via": "openrouter",
+    "endpoint": "/chat/completions",
+    "prices": {
+      "google/gemini-3.1-flash-image": { "per_image": 0.068, "per_image_2k": 0.1 },
+      "google/gemini-3-pro-image": { "per_image": 0.14, "per_image_2k": 0.2 }
+    },
+    "gotchas": [
+      "Ask for the subject on solid #FF00FF for the chroma key",
+      "Edits can't restructure geometry (e.g. change a sail type); regenerate from text instead",
+      "Adds stray ground lines under subjects; erase them on the raw image before processing"
+    ]
+  },
+  "stt": {
+    "default": "assemblyai/universal-3-5-pro",
+    "fallbacks": ["openai/whisper-large-v3"],
+    "via": "openrouter",
+    "endpoint": "/audio/transcriptions",
+    "prices": {
+      "assemblyai/universal-3-5-pro": { "per_minute": 0.0075 },
+      "openai/whisper-large-v3": { "per_minute": 0.0005 }
+    },
+    "gotchas": ["AssemblyAI accepts WAV only; convert first", "Brand names get misheard; normalise them with theme.json brandWords"]
+  },
+  "judge": {
+    "default": "google/gemini-3.8-flash",
+    "fallbacks": ["google/gemini-3.1-flash-lite"],
+    "via": "openrouter",
+    "endpoint": "/chat/completions",
+    "prices": {
+      "google/gemini-3.8-flash": { "per_call": 0.004 },
+      "google/gemini-3.1-flash-lite": { "per_call": 0.002 }
+    },
+    "gotchas": [
+      "One clip per request (multi-clip comparisons swap clip identities)",
+      "Parrots timestamps from the prompt; verify timing claims with STT or plots"
+    ]
+  }
+}

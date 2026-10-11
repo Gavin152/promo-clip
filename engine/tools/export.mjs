@@ -2,25 +2,13 @@
 // Web Audio mix offline -> WAV, canvas frames -> H.264, normalises loudness (-14 LUFS integrated,
 // <= -1 dBTP, linear gain) and muxes a master (CRF 16) and a web version.
 // Output: <project>/out/<name>_<format>_<size>.mp4 and ..._web.mp4
-import ffmpegPath from 'ffmpeg-static';
-import { spawn } from 'node:child_process';
+import { ffmpeg } from './lib/audio.mjs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { build } from './build-assets.mjs';
 import { openPlayer, frameJpeg } from './lib/page.mjs';
 import { projectName } from './lib/paths.mjs';
 import { sizeLabel } from '../js/formats.js';
-
-export function ffmpeg(argv, opts = {}) {
-  return new Promise((res, rej) => {
-    const p = spawn(ffmpegPath, argv, { stdio: [opts.stdin ? 'pipe' : 'ignore', 'inherit', opts.capture ? 'pipe' : 'inherit'] });
-    let err = '';
-    if (opts.capture) p.stderr.on('data', (d) => (err += d));
-    p.on('error', rej);
-    p.on('exit', (c) => (c === 0 ? res(err) : rej(new Error('ffmpeg exit ' + c + err.slice(-500)))));
-    if (opts.stdin) opts.stdin(p.stdin);
-  });
-}
 
 /** two-pass loudnorm in LINEAR mode (pure gain) to -14 LUFS / -1 dBTP; returns measured + result */
 export async function normalise(wavIn, wavOut) {
