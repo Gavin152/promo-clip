@@ -70,7 +70,7 @@ async function run(cmd, pos, flags, ctx) {
       const [out, ...times] = pos;
       if (!out || (!times.length && !flags.scenes)) throw new Error('usage: stills <dir> <t…> | --scenes');
       if (!flags['no-build']) await build(project, { quiet: true });
-      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet });
+      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet, png: flags.png });
     }
     case 'export': {
       const o = { size, fps: flags.fps, webOnly: !!flags['web-only'], audioOnly: !!flags['audio-only'], stems: !!flags.stems, out: flags.out, noBuild: !!flags['no-build'], quiet: flags.quiet };

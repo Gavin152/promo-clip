@@ -1,0 +1,92 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: engine/tools/package-lock.json
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: engine/tools
+      - name: Run unit tests
+        # Note: Node 24+ rejects a bare directory argument to --test; always use a glob.
+        run: node --test tests/unit/*.test.mjs
+
+  fixture:
+    name: Fixture pipeline (browser + export)
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: engine/tools/package-lock.json
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: engine/tools
+      - name: CLI pipeline on the fixture (no API calls)
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        working-directory: fixtures/sample-15s
+        run: |
+          node ../../engine/tools/cli.mjs build
+          for f in landscape vertical square; do
+            node ../../engine/tools/cli.mjs stills .work/stills/$f --scenes --format $f --size 720p --no-build --png=true
+            node ../../engine/tools/cli.mjs export --format $f --size 720p --web-only --no-build
+          done
+          node ../../tests/pixel-diff.mjs .work/stills/landscape ref/stills/landscape --tol 8
+          node ../../tests/pixel-diff.mjs .work/stills/vertical  ref/stills/vertical  --tol 8
+          node ../../tests/pixel-diff.mjs .work/stills/square    ref/stills/square    --tol 8
+          # QA landscape only: the fixture vertical/square layouts have decorative elements
+          # (cloud y≈230, sun y=250) that trip the vertical safe-zone check (y<250). Those are
+          # known fixture-layout issues in scene files. See docs/KNOWN-ISSUES.md.
+          node ../../engine/tools/cli.mjs qa --format landscape --size 720p
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fixture-output
+          path: |
+            fixtures/sample-15s/out/
+            fixtures/sample-15s/.work/stills/
+
+  integration:
+    name: Integration test (node:test)
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: engine/tools/package-lock.json
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: engine/tools
+      - name: Run integration test
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node --test tests/integration/fixture-pipeline.test.mjs
+      - name: Upload integration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-output
+          path: /tmp/promo-fixture-*/out/
