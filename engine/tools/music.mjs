@@ -3,7 +3,7 @@
 // SailTrax-specific hardcoding removed; story beats come from vo/timing.json + script.md.
 import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join, extname, basename, resolve } from 'node:path';
-import { decode, loudness as ffmpegLoudness, decode as audioDecode } from './lib/audio.mjs';
+import { decode, loudness as ffmpegLoudness } from './lib/audio.mjs';
 import { readJson } from './lib/paths.mjs';
 import { paid, quote } from './lib/paid.mjs';
 import { QaFail } from './lib/errors.mjs';
@@ -389,8 +389,7 @@ async function mixCommand({ project, pos: _p, flags, log }) {
   const voWav = join(tmp, 'stem_vo.wav'), muWav = join(tmp, 'stem_music.wav');
 
   const SR16 = 16000;
-  const dec16 = (f) => audioDecode(f, SR16);
-  const vo = dec16(voWav), mu = dec16(muWav);
+  const vo = decode(voWav, SR16), mu = decode(muWav, SR16);
 
   const timing = loadTiming(project);
   if (!timing) throw new Error('vo/timing.json not found');
@@ -449,8 +448,7 @@ async function checkCommand({ project, pos: _p, flags, log }) {
   const voWav = join(tmp, 'stem_vo.wav'), muWav = join(tmp, 'stem_music.wav');
 
   const SR16 = 16000;
-  const dec16 = (f) => audioDecode(f, SR16);
-  const vo = dec16(voWav), mu = dec16(muWav);
+  const vo = decode(voWav, SR16), mu = decode(muWav, SR16);
 
   const timing = loadTiming(project);
   if (!timing) throw new Error('vo/timing.json not found');
