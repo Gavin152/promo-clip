@@ -1,0 +1,92 @@
+{
+ "track": "track.mp3",
+ "source": "procedural fixture loop (make-fixture.mjs): C-G-Am-F pads, kick, off-beat hat, final hit",
+ "bpm": 120,
+ "beatPeriod": 0.5,
+ "firstDownbeat": 0,
+ "offset": -5.59,
+ "hits": {
+  "reveal": 10,
+  "final": 16,
+  "end": 19.8
+ },
+ "film": {
+  "reveal": 4.41,
+  "final": 10.41,
+  "end": 14.21
+ },
+ "accents": [
+  {
+   "film": 4.41,
+   "track": 10,
+   "change": 3
+  }
+ ],
+ "downbeats": [
+  0,
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18
+ ],
+ "beats": [
+  0,
+  0.5,
+  1,
+  1.5,
+  2,
+  2.5,
+  3,
+  3.5,
+  4,
+  4.5,
+  5,
+  5.5,
+  6,
+  6.5,
+  7,
+  7.5,
+  8,
+  8.5,
+  9,
+  9.5,
+  10,
+  10.5,
+  11,
+  11.5,
+  12,
+  12.5,
+  13,
+  13.5,
+  14,
+  14.5,
+  15,
+  15.5,
+  16,
+  16.5,
+  17,
+  17.5,
+  18,
+  18.5,
+  19,
+  19.5
+ ],
+ "mix": {
+  "bedDb": -8,
+  "duckDb": -18,
+  "attack": 0.18,
+  "release": 0.6,
+  "lookahead": 0.15,
+  "mergeGap": 0.7,
+  "sections": [],
+  "fadeIn": 0.4,
+  "fadeOut": 0.8,
+  "voDb": 0,
+  "sfxDb": -8
+ }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "sample-15s",
+  "engine": "1.0.0",
+  "mode": "gated",
+  "budget": {
+    "limitUsd": 0,
+    "spentUsd": 0
+  },
+  "output": {
+    "formats": [
+      "landscape",
+      "vertical",
+      "square"
+    ],
+    "primary": "landscape",
+    "sizes": [
+      "720p"
+    ],
+    "fps": 30
+  },
+  "stages": {
+    "discover": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "script": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "voice": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "music": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "art": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "scenes": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "formats": {
+      "status": "done",
+      "at": "2026-10-11T00:00:00Z",
+      "note": "fixture: pre-supplied (your own) assets"
+    },
+    "export": {
+      "status": "todo"
+    }
+  },
+  "gates": []
+}

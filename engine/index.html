@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promo</title>
+  <style>
+    :root { --bg: #0b0f19; --cyan: #01D7FC; --text: #F9FAFB; --muted: #9CA3AF; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; overflow: hidden; }
+    #wrap { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); }
+    #stage { width: min(100vw, calc(100vh * var(--arw, 1.7778))); height: auto; aspect-ratio: var(--ar, 16 / 9); display: block; background: #F3EBDD; box-shadow: 0 20px 80px rgba(0,0,0,.5); }
+    #start { position: absolute; inset: 0; display: grid; place-items: center; cursor: pointer; background: radial-gradient(ellipse at center, rgba(11,15,25,.25), rgba(11,15,25,.65)); transition: opacity .35s; opacity: 0; pointer-events: none; }
+    body.ready #start { opacity: 1; pointer-events: auto; }
+    body.ready #start.hidden { opacity: 0; pointer-events: none; }
+    #start button { all: unset; display: flex; align-items: center; gap: 18px; padding: 22px 38px 22px 30px; border-radius: 999px; background: var(--cyan); color: #111827; font: 700 clamp(18px, 2.4vw, 30px) Orbitron, sans-serif; letter-spacing: .04em; box-shadow: 0 10px 40px rgba(1,215,252,.45), 0 0 0 6px rgba(255,255,255,.9); transform: rotate(-2deg); transition: transform .2s; }
+    #start:hover button { transform: rotate(0deg) scale(1.05); }
+    #start button i { width: 0; height: 0; border-left: 26px solid #111827; border-top: 16px solid transparent; border-bottom: 16px solid transparent; }
+    #loading { position: absolute; font: 600 18px Inter, sans-serif; color: var(--muted); letter-spacing: .08em; }
+    body.ready #loading { display: none; }
+    #controls { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: linear-gradient(transparent, rgba(0,0,0,.65)); opacity: 0; transition: opacity .3s; }
+    #controls.show, #controls:hover { opacity: 1; }
+    #controls button { all: unset; cursor: pointer; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-size: 15px; }
+    #controls button:hover { background: var(--cyan); color: #111827; }
+    #bar { flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); cursor: pointer; position: relative; }
+    #fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 4px; background: var(--cyan); }
+    #time { font: 600 13px Inter, sans-serif; color: #fff; min-width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+    body:not(.ready) #controls { display: none; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="stage" width="1920" height="1080"></canvas>
+    <div id="loading">LOADING…</div>
+    <div id="start"><button><i></i><span>Play</span></button></div>
+    <div id="controls">
+      <button id="play" title="Play / pause (space)">▶</button>
+      <div id="bar"><div id="fill"></div></div>
+      <div id="time">0:00 / 1:00</div>
+      <button id="fs" title="Fullscreen (f)">⛶</button>
+    </div>
+  </div>
+  <script src="promo.bundle.js"></script>
+</body>
+</html>
