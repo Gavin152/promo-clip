@@ -69,6 +69,9 @@ export const S = {
   border: 11, // sticker border half-width
   t: 0,
   bb: null, // device-space bbox accumulated during the sticker back pass
+  // QA hooks (null when idle — zero cost to normal rendering):
+  scene: null,   // set by main.js to the current scene id during __frameBoxes
+  collect: null, // array filled with {x0,y0,x1,y1,scene} device-px bboxes by sticker(); null = off
 };
 
 /** grow sticker bbox by a local point (+pad) under ctx transform */
@@ -336,6 +339,10 @@ export function sticker(ctx, fn, o = {}) {
   if (bb[0] === Infinity) bb = [0, 0, layer.width, layer.height];
   bb = [Math.max(0, Math.floor(bb[0]) - 2), Math.max(0, Math.floor(bb[1]) - 2), Math.min(layer.width, Math.ceil(bb[2]) + 2), Math.min(layer.height, Math.ceil(bb[3]) + 2)];
   lastBB = bb;
+  // collect bbox for QA layout check (zero cost when S.collect is null)
+  if (S.collect !== null) {
+    S.collect.push({ x0: bb[0], y0: bb[1], x1: bb[2], y1: bb[3], scene: S.scene });
+  }
   if (prevBB) {
     // nested sticker: extend the parent's bbox too
     prevBB[0] = Math.min(prevBB[0], bb[0]); prevBB[1] = Math.min(prevBB[1], bb[1]);

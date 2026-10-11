@@ -38,3 +38,14 @@ export async function frameJpeg(page, t, q = 0.92) {
   const data = await page.evaluate((tt, qq) => window.__frameJPEG(tt, qq), t, q);
   return Buffer.from(data.slice(data.indexOf(',') + 1), 'base64');
 }
+
+/** renders frame t and returns the PNG bytes (lossless; useful for pixel-diff reference stills) */
+export async function framePng(page, t) {
+  const data = await page.evaluate((tt) => window.__framePNG(tt), t);
+  return Buffer.from(data.slice(data.indexOf(',') + 1), 'base64');
+}
+
+/** renders frame t and returns all sticker bboxes in design units [{x0,y0,x1,y1,scene}] */
+export async function frameBoxes(page, t) {
+  return page.evaluate((tt) => window.__frameBoxes(tt), t);
+}

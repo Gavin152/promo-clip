@@ -64,6 +64,7 @@ export function renderFrame(t) {
   for (const sc of SCENES) {
     if (t >= sc.start && t < sc.end) {
       ctx.save();
+      S.scene = sc.id; // tracked for window.__frameBoxes QA hook
       sc.draw(ctx, t - sc.start, t, sc.L);
       ctx.restore();
     }
@@ -196,5 +197,27 @@ window.__renderAudio = async (solo) => {
 window.__frameJPEG = (t, q = 0.92) => {
   renderFrame(t);
   return canvas.toDataURL('image/jpeg', q);
+};
+window.__framePNG = (t) => {
+  renderFrame(t);
+  return canvas.toDataURL('image/png');
+};
+/**
+ * Render frame t and return all sticker bboxes in design units.
+ * [{x0, y0, x1, y1, scene}] — design units = (device px + crop) / scale.
+ * Used by the QA layout checker.
+ */
+window.__frameBoxes = (t) => {
+  S.collect = [];
+  renderFrame(t);
+  const boxes = S.collect.map((b) => ({
+    x0: (b.x0 + CROP_X) / SCALE,
+    y0: (b.y0 + CROP_Y) / SCALE,
+    x1: (b.x1 + CROP_X) / SCALE,
+    y1: (b.y1 + CROP_Y) / SCALE,
+    scene: b.scene,
+  }));
+  S.collect = null;
+  return boxes;
 };
 boot();
