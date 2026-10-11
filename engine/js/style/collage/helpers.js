@@ -3,7 +3,7 @@
 import { W, H, TAU, clamp, lerp, prog, ease, noise1, rng, shake } from '../../util.js';
 import { BEATS } from '../../data.js';
 import { S, C, INK, shape, ell, rrect, sticker, text, measure, torn, tornRectPts, highlight } from './draw.js';
-import { IMG } from './props.js';
+import { image } from './props.js';
 
 /** '#01D7FC' (or a palette key) + alpha -> 'rgba(1,215,252,a)' */
 export function alpha(color, a) {
@@ -201,7 +201,7 @@ export function corkBoard(ctx) {
 }
 /** a torn-paper cut of an image (map scraps etc.). o: {jag, sx, sy, sw, sh} source crop */
 export function tornImage(ctx, key, x, y, w, h, seed, o = {}) {
-  const im = IMG[key];
+  const im = image(key);
   if (!im) return;
   torn(ctx, tornRectPts(x, y, w, h, seed, o.jag ?? 9), '#FBF6EA', {
     clipFn: (c) => {

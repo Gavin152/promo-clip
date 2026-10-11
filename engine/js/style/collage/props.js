@@ -3,6 +3,13 @@ import { W, H, SCALE, TAU, DEG, clamp, hash, hs, rng, prog, ease } from '../../u
 import { S, C, INK, FONT, THEME_DATA, bbAdd, shape, stroke, ell, rrect, resample, quad, bez, partial, sticker, text, circle, torn, tornRectPts, cached, arrow, sparkle } from './draw.js';
 
 export const IMG = {};
+const warned = new Set();
+/** IMG[key], warning once when a scene names a key that is not in manifest.json (it would draw nothing) */
+export function image(key) {
+  const im = IMG[key];
+  if (!im && !warned.has(key)) { warned.add(key); console.warn(`image "${key}" is not in manifest.json (or failed to load)`); }
+  return im;
+}
 export function loadImages(list) {
   return Promise.all(
     Object.entries(list).map(
@@ -172,7 +179,7 @@ export function phone(ctx, cx, cy, h, screen, o = {}) {
     roundClip(c, sx, sy, sw, sh, w * 0.12);
     c.fillStyle = C.navy;
     c.fillRect(sx, sy, sw, sh);
-    if (typeof screen === 'string' && IMG[screen]) {
+    if (typeof screen === 'string' && image(screen)) {
       const im = IMG[screen];
       const k = Math.max(sw / im.width, sh / im.height);
       c.drawImage(im, sx + (sw - im.width * k) / 2, sy + (sh - im.height * k) / 2, im.width * k, im.height * k);
@@ -697,7 +704,7 @@ export function confetti(ctx, x, y, tau, n = 60, seed = 3, spread = 1) {
   }
 }
 export function img(ctx, key, x, y, w, o = {}) {
-  const im = IMG[key];
+  const im = image(key);
   if (!im) return;
   const h = (w * im.height) / im.width;
   ctx.save();
@@ -729,7 +736,7 @@ export { arrow, sparkle };
  * anchor defaults to bottom-centre (characters stand on y). o: {h, rot, flip, sx, sy, alpha, ax, ay, shadow, boil}
  */
 export function art(ctx, key, x, y, h, o = {}) {
-  const im = IMG[key];
+  const im = image(key);
   if (!im || h <= 0) return;
   const w = (h * im.width) / im.height;
   const ax = o.ax ?? 0.5, ay = o.ay ?? 1;
@@ -755,7 +762,7 @@ export function art(ctx, key, x, y, h, o = {}) {
 }
 /** full-frame backdrop with slow Ken-Burns push/pan. o: {zoom, fx, fy, dx, dy} fx/fy = focus 0..1 */
 export function backdrop(ctx, key, lt, dur, o = {}) {
-  const im = IMG[key];
+  const im = image(key);
   if (!im) return;
   const z0 = o.z0 ?? 1.02, z1 = o.zoom ?? 1.08;
   const p = ease.inOutSine(clamp(lt / dur));
