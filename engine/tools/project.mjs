@@ -35,9 +35,9 @@ function npmInstall(dir, log) {
  * creates a video folder: copies the engine, writes promo.json / theme.json / manifest.json skeletons.
  * Existing folders with promo.json are left alone (returns their state).
  */
-export async function setup({ dir, name, install = true, log = console.log }) {
+export async function setup({ dir, name, install = true, checkFirst = true, log = console.log }) {
   const target = resolve(dir ?? '.');
-  const deps = await checkDeps({ project: target, keyLoader: loadKey });
+  const deps = checkFirst ? await checkDeps({ project: target, keyLoader: loadKey }) : [];
   const blocking = deps.filter((d) => !d.ok && ['node', 'chrome'].includes(d.name));
   if (blocking.length) {
     const e = new Error(`missing dependencies:\n${blocking.map((d) => `  - ${d.name}: ${d.hint}`).join('\n')}`);
