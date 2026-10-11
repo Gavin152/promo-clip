@@ -1,4 +1,5 @@
 // VO analysis helpers: CANON table + transcript diff + brand closure.
+import { wordKey } from '../../js/data-core.js';
 // Shared by qa, rank, and timing commands.
 
 // Base canonicalization table: generic spoken-form → canonical token.
@@ -145,9 +146,9 @@ export function buildSentences(words) {
  * For compound brand names (e.g. "SailTrax"), use a theme.json "spoken" override instead.
  */
 export function brandNormalize(word, brandWords) {
-  const bare = word.replace(/[^a-z]/gi, '').toLowerCase();
+  const bare = wordKey(word);
   for (const bw of brandWords) {
-    if (bare === bw.toLowerCase()) return word.charAt(0).toUpperCase() + word.slice(1);
+    if (bare === wordKey(bw)) return word.charAt(0).toUpperCase() + word.slice(1);
   }
   return word;
 }

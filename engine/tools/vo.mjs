@@ -8,6 +8,7 @@ import { parseScript } from './lib/script.mjs';
 import { ffmpeg, analyse as ffmpegAnalyse, duration, decode, envelope } from './lib/audio.mjs';
 import { paid, quote, setClient } from './lib/paid.mjs';
 import { QaFail } from './lib/errors.mjs';
+import { wordKey } from '../js/data-core.js';
 import { buildCanon, analyseTranscript, closureMs, buildSentences, brandNormalize } from './lib/vo-analyse.mjs';
 
 export { setClient }; // re-export so tests can inject a fake client
@@ -384,16 +385,16 @@ async function timing(ctx) {
  * silence at the quietest 20 ms inside each pause. Always rebuilds from the no-gaps
  * baseline (assets/vo/vo_nogaps.wav + vo/timing_nogaps.json) so it is safe to re-run.
  *
- * --max S  target pause duration in seconds (default 1.0); gaps already at or above
- *           this value are skipped.
- * --min S  minimum acceptable pause (default 0.85); documents intent but does not
- *           change the target (all boundaries are widened to --max).
+ * --min S  pauses already this long (default 0.85 s) are left alone
+ * --max S  shorter pauses are widened to this length (default 1.0 s)
  *
  * Output: assets/vo/vo.wav + vo/timing.json (overwrites; nogaps pair is unchanged).
  */
 async function gaps(ctx) {
   const { project, pos, flags, log } = ctx;
   const maxTarget = Number(flags.max ?? 1.0);
+  const minOk = Number(flags.min ?? 0.85);
+  if (!(minOk <= maxTarget)) throw new Error('--min must be <= --max');
 
   const srcWav = join(project, 'assets/vo/vo_nogaps.wav');
   const srcJson = join(project, 'vo/timing_nogaps.json');
@@ -411,8 +412,8 @@ async function gaps(ctx) {
   const W = t0.words;
 
   // compute insertion amounts (pure), then add the quietest-spot position
-  const bare = (s) => s.replace(/[^a-z]/gi, '').toLowerCase();
-  const plan = computeGapInsertions(W, boundaries, maxTarget);
+  const bare = wordKey;
+  const plan = computeGapInsertions(W, boundaries, maxTarget, minOk);
   for (const b of boundaries) {
     if (!plan.find((c) => bare(c.after) === bare(b.after))) {
       const skip = W.find((w) => bare(w.w) === bare(b.after));
@@ -480,14 +481,15 @@ async function gaps(ctx) {
  * @param {number} maxTarget  - target gap duration in seconds (default 1.0)
  * @returns {Array} cuts: [{after, before, added, wordIdx}] — skips gaps already at/above target
  */
-export function computeGapInsertions(words, boundaries, maxTarget = 1.0) {
-  const bare = (s) => s.replace(/[^a-z]/gi, '').toLowerCase();
+export function computeGapInsertions(words, boundaries, maxTarget = 1.0, minOk = 0) {
+  const bare = wordKey;
   const cuts = [];
   for (const b of boundaries) {
     const i = words.findIndex((w, k) =>
       bare(w.w) === bare(b.after) && words[k + 1] && bare(words[k + 1].w) === bare(b.before));
     if (i < 0) continue;
     const current = words[i + 1].start - words[i].end;
+    if (minOk && current >= minOk) continue; // already long enough
     const add = +(maxTarget - current).toFixed(3);
     if (add <= 0.01) continue;
     cuts.push({ after: b.after, before: b.before, added: add, wordIdx: i + 1 });

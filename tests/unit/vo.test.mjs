@@ -305,3 +305,11 @@ test('generate --takes 2: two wavs with suffixed names, two spend entries', asyn
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('gap insertions: digits and accents match, --min leaves long pauses alone', async () => {
+  const { computeGapInsertions } = await import('../../engine/tools/vo.mjs');
+  const words = [{ w: '7', start: 0, end: 0.3 }, { w: 'Café.', start: 0.6, end: 1.0 }, { w: 'Go', start: 1.9, end: 2.1 }];
+  const b = [{ after: '7', before: 'Café.' }, { after: 'Café.', before: 'Go' }];
+  assert.deepEqual(computeGapInsertions(words, b, 1.0, 0.85).map((c) => [c.after, c.added]), [['7', 0.7]]);
+  assert.equal(computeGapInsertions(words, b, 1.0, 0).length, 2);
+});
