@@ -2,89 +2,86 @@ name: ci
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # bash everywhere (Git Bash on Windows) so test globs expand the same way on every OS
+    shell: bash
+
 jobs:
   unit:
-    name: Unit tests
-    runs-on: ubuntu-latest
+    name: Unit tests + setup check (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['22']
+        include:
+          - os: ubuntu-latest
+            node: '20'   # minimum supported version
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
           cache: npm
           cache-dependency-path: engine/tools/package-lock.json
       - name: Install tool dependencies
         run: npm ci
         working-directory: engine/tools
-      - name: Run unit tests
-        # Note: Node 24+ rejects a bare directory argument to --test; always use a glob.
+      - name: Unit tests
+        # Node 24+ rejects a bare directory argument to --test; always use a glob.
         run: node --test tests/unit/*.test.mjs
+      - name: Setup check (Node, packages, ffmpeg, Chrome)
+        run: node engine/tools/cli.mjs check --project fixtures/sample-15s
 
-  fixture:
-    name: Fixture pipeline (browser + export)
+  integration-linux:
+    name: Integration + pixel-diff (Linux container)
     runs-on: ubuntu-latest
     needs: unit
+    # Same image as tests/make-refs.mjs uses for the Linux reference stills: text rasterisation
+    # differs between Chrome builds, so pixel-diff only runs where the refs were made.
+    container: node:22-bookworm
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: engine/tools/package-lock.json
-      - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v1
-        id: chrome
+      - name: Install Chromium
+        run: apt-get update -qq && apt-get install -y -qq chromium
       - name: Install tool dependencies
         run: npm ci
         working-directory: engine/tools
-      - name: CLI pipeline on the fixture (no API calls)
+      - name: Integration test (build, stills, pixel-diff, export, qa)
         env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        working-directory: fixtures/sample-15s
-        run: |
-          node ../../engine/tools/cli.mjs build
-          for f in landscape vertical square; do
-            node ../../engine/tools/cli.mjs stills .work/stills/$f --scenes --format $f --size 720p --no-build --png=true
-            node ../../engine/tools/cli.mjs export --format $f --size 720p --web-only --no-build
-          done
-          node ../../tests/pixel-diff.mjs .work/stills/landscape ref/stills/landscape --tol 8
-          node ../../tests/pixel-diff.mjs .work/stills/vertical  ref/stills/vertical  --tol 8
-          node ../../tests/pixel-diff.mjs .work/stills/square    ref/stills/square    --tol 8
-          # QA every format x size in promo.json (3 formats at 720p)
-          node ../../engine/tools/cli.mjs qa
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fixture-output
-          path: |
-            fixtures/sample-15s/out/
-            fixtures/sample-15s/.work/stills/
-
-  integration:
-    name: Integration test (node:test)
-    runs-on: ubuntu-latest
-    needs: unit
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: engine/tools/package-lock.json
-      - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v1
-        id: chrome
-      - name: Install tool dependencies
-        run: npm ci
-        working-directory: engine/tools
-      - name: Run integration test
-        env:
-          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-        run: node --test tests/integration/fixture-pipeline.test.mjs
+          CHROME_PATH: /usr/bin/chromium
+        run: node --test tests/integration/*.test.mjs
       - name: Upload integration artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-output
-          path: /tmp/promo-fixture-*/out/
+          name: integration-output-linux
+          path: /tmp/promo-fixture-*/
+
+  integration:
+    name: Integration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: unit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: engine/tools/package-lock.json
+      - name: Install tool dependencies
+        run: npm ci
+        working-directory: engine/tools
+      - name: Integration test (build, stills, export, qa; Chrome preinstalled on the runner)
+        env:
+          PIXEL_DIFF: '0'   # runner Chrome differs from the machine that made the refs
+        run: node --test tests/integration/*.test.mjs

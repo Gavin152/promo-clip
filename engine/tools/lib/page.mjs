@@ -4,6 +4,10 @@ import { serve } from '../serve.mjs';
 import { findChrome } from './chrome.mjs';
 import { resolveSize } from '../../js/formats.js';
 
+// Chrome refuses to start its sandbox as root (Docker, CI containers, WSL as root). The page only
+// loads our own local files, so dropping the sandbox there is acceptable; CHROME_NO_SANDBOX=1 forces it.
+const noSandbox = () => process.env.CHROME_NO_SANDBOX === '1' || (process.platform === 'linux' && process.getuid?.() === 0);
+
 export async function openPlayer(project, { format = 'landscape', size = '1080p', timeout = 120000, bundle = null } = {}) {
   resolveSize(format, size); // throws on a bad format / size before Chrome starts
   const { srv, url } = await serve(project, { bundle });
@@ -11,7 +15,7 @@ export async function openPlayer(project, { format = 'landscape', size = '1080p'
     executablePath: findChrome(),
     headless: true,
     protocolTimeout: 900000,
-    args: ['--autoplay-policy=no-user-gesture-required'],
+    args: ['--autoplay-policy=no-user-gesture-required', ...(noSandbox() ? ['--no-sandbox'] : [])],
   });
   const page = await browser.newPage();
   page.on('console', (m) => ['error', 'warning', 'warn'].includes(m.type()) && console.log(`[page ${m.type()}]`, m.text()));

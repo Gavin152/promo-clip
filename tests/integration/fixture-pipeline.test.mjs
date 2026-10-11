@@ -5,7 +5,9 @@
 //   1. Copy fixture to a temp directory
 //   2. build (bundle the player)
 //   3. stills — all 3 formats at 720p (PNG, --scenes)
-//   4. pixel-diff vs committed ref stills (tol=8)
+//   4. pixel-diff vs committed ref stills for this OS (tol=8): ref/stills/<platform>/<format>/.
+//      Chrome rasterises text differently per OS, so each platform has its own refs
+//      (make them with tests/make-refs.mjs). Skipped when this OS has none or PIXEL_DIFF=0.
 //   5. export — all 3 formats at 720p --web-only (or just landscape if time is tight)
 //   6. qa — passes with exit code 0
 //
@@ -23,6 +25,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURE_SRC = join(ROOT, 'fixtures/sample-15s');
 const CLI = join(ROOT, 'engine/tools/cli.mjs');
 const PIXEL_DIFF = join(ROOT, 'tests/pixel-diff.mjs');
+const REFS = join(FIXTURE_SRC, 'ref/stills', process.platform);
+const skipDiff = process.env.PIXEL_DIFF === '0' ? 'PIXEL_DIFF=0'
+  : existsSync(REFS) ? false : `no reference stills for ${process.platform} (run tests/make-refs.mjs)`;
 
 // create temp copy once
 const tmpDir = mkdtempSync(join(tmpdir(), 'promo-fixture-'));
@@ -55,8 +60,6 @@ test('fixture: copy to temp dir', () => {
   cpSync(FIXTURE_SRC, tmpDir, { recursive: true });
   assert.ok(existsSync(join(tmpDir, 'promo.json')));
   assert.ok(existsSync(join(tmpDir, 'theme.json')));
-  // ref stills must exist (they are committed)
-  assert.ok(existsSync(join(FIXTURE_SRC, 'ref/stills/landscape/01-intro.png')), 'ref stills must be committed');
 });
 
 test('fixture: build', { timeout: 60_000 }, () => {
@@ -92,25 +95,25 @@ test('fixture: stills — square 720p', { timeout: 120_000 }, () => {
   assert.ok(existsSync(join(dir, '01-intro.png')));
 });
 
-test('fixture: pixel-diff landscape vs ref', { timeout: 60_000 }, () => {
+test('fixture: pixel-diff landscape vs ref', { timeout: 60_000, skip: skipDiff }, () => {
   const testDir = join(tmpDir, '.work/stills/landscape');
-  const refDir = join(FIXTURE_SRC, 'ref/stills/landscape');
+  const refDir = join(REFS, 'landscape');
   const r = pixelDiff(testDir, refDir);
   if (r.status !== 0) console.error(r.stdout, r.stderr);
   assert.equal(r.status, 0, `pixel-diff landscape failed:\n${r.stdout}`);
 });
 
-test('fixture: pixel-diff vertical vs ref', { timeout: 60_000 }, () => {
+test('fixture: pixel-diff vertical vs ref', { timeout: 60_000, skip: skipDiff }, () => {
   const testDir = join(tmpDir, '.work/stills/vertical');
-  const refDir = join(FIXTURE_SRC, 'ref/stills/vertical');
+  const refDir = join(REFS, 'vertical');
   const r = pixelDiff(testDir, refDir);
   if (r.status !== 0) console.error(r.stdout, r.stderr);
   assert.equal(r.status, 0, `pixel-diff vertical failed:\n${r.stdout}`);
 });
 
-test('fixture: pixel-diff square vs ref', { timeout: 60_000 }, () => {
+test('fixture: pixel-diff square vs ref', { timeout: 60_000, skip: skipDiff }, () => {
   const testDir = join(tmpDir, '.work/stills/square');
-  const refDir = join(FIXTURE_SRC, 'ref/stills/square');
+  const refDir = join(REFS, 'square');
   const r = pixelDiff(testDir, refDir);
   if (r.status !== 0) console.error(r.stdout, r.stderr);
   assert.equal(r.status, 0, `pixel-diff square failed:\n${r.stdout}`);

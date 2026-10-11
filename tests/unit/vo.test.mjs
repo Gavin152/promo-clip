@@ -320,7 +320,7 @@ test('vo timing --words: own word times instead of STT (no API), seeds the no-ga
   const { join } = await import('node:path');
   const { commands } = await import('../../engine/tools/vo.mjs');
   const dir = mkdtempSync(join(tmpdir(), 'vo-words-'));
-  const fx = new URL('../../fixtures/sample-15s/', import.meta.url).pathname;
+  const fx = fileURLToPath(new URL('../../fixtures/sample-15s/', import.meta.url));
   for (const f of ['promo.json', 'theme.json', 'script.md', 'assets/vo/vo_nogaps.wav']) cpSync(join(fx, f), join(dir, f === 'assets/vo/vo_nogaps.wav' ? 'assets/vo/vo.wav' : f), { recursive: true });
   rmSync(join(dir, 'vo'), { recursive: true, force: true });
   const r = await commands.timing({ project: dir, pos: [], flags: { words: join(fx, 'vo/timing_nogaps.json'), 'vo-start': '0.5' }, log: () => {} });

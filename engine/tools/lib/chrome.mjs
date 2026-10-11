@@ -1,5 +1,6 @@
 // Cross-platform Chrome / Chromium discovery for headless rendering.
 // Order: CHROME_PATH env var, then well-known install paths per OS, then binaries on PATH.
+// Microsoft Edge (Chromium) is the last resort: it ships with every Windows install.
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -18,11 +19,16 @@ function candidates() {
       '/Applications/Chromium.app/Contents/MacOS/Chromium',
       '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
       join(process.env.HOME ?? '', 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
     ];
   }
   if (p === 'win32') {
     const roots = [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)'], process.env.LOCALAPPDATA].filter(Boolean);
-    return roots.map((r) => join(r, 'Google/Chrome/Application/chrome.exe'));
+    return [
+      ...roots.map((r) => join(r, 'Google/Chrome/Application/chrome.exe')),
+      ...roots.map((r) => join(r, 'Chromium/Application/chrome.exe')),
+      ...roots.map((r) => join(r, 'Microsoft/Edge/Application/msedge.exe')),
+    ];
   }
   return [];
 }
@@ -45,7 +51,7 @@ export function findChrome() {
     throw new Error(`CHROME_PATH=${process.env.CHROME_PATH} does not exist`);
   }
   for (const c of candidates()) if (existsSync(c)) return c;
-  const found = onPath(['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser', 'chrome']);
+  const found = onPath(['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser', 'chrome', 'microsoft-edge-stable', 'microsoft-edge']);
   if (found) return found;
   throw new Error(`Chrome not found. ${HINTS[process.platform] ?? HINTS.linux}`);
 }
