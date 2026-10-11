@@ -27,6 +27,9 @@ export const DESIGN_FRAME = {
 };
 
 /** Intersection area of two boxes (0 if they don't overlap). */
+/** '[x0,y0 → x1,y1]' in whole design units */
+const rect = (b) => `[${Math.round(b.x0)},${Math.round(b.y0)} → ${Math.round(b.x1)},${Math.round(b.y1)}]`;
+
 export function intersectArea(a, b) {
   const ox = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
   const oy = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
@@ -121,7 +124,7 @@ export function checkLayout(boxes, format) {
     warnings.push({
       kind: 'overlap',
       severity: 'warning',
-      msg: `boxes overlap by ${Math.round(overlapArea)} du² (scene ${a.scene ?? '?'} / ${b.scene ?? '?'})`,
+      msg: `boxes overlap by ${Math.round(overlapArea)} du²: ${rect(a)}${a.text ? ' (text)' : ''} and ${rect(b)}${b.text ? ' (text)' : ''}`,
       a,
       b,
       overlapArea,

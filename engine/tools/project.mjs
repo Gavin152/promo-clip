@@ -156,6 +156,10 @@ export function upgrade(project, { install = true, log = console.log } = {}) {
   const s = loadState(project);
   const from = s.engine;
   const oldPkg = existsSync(join(project, 'tools/package.json')) ? readFileSync(join(project, 'tools/package.json'), 'utf8') : '';
+  // back up the old engine (minus node_modules) so a broken upgrade can be rolled back by copying it back
+  const backup = join(project, '.work', `engine-${from}`);
+  rmSync(backup, { recursive: true, force: true });
+  for (const f of ENGINE_FILES) if (existsSync(join(project, f))) cpSync(join(project, f), join(backup, f), { recursive: true, filter: copyFilter });
   // clear old engine files first so removed modules don't linger (node_modules kept)
   for (const f of ['js', 'tools']) {
     const d = join(project, f);
@@ -168,6 +172,6 @@ export function upgrade(project, { install = true, log = console.log } = {}) {
   s.engine = ENGINE_VERSION;
   markStale(s, 'scenes', `engine upgraded ${from} -> ${ENGINE_VERSION}`);
   saveState(project, s);
-  log(`engine ${from} -> ${ENGINE_VERSION} in ${relative(process.cwd(), project) || '.'}; scenes marked stale — render stills to compare`);
-  return { from, to: ENGINE_VERSION, project };
+  log(`engine ${from} -> ${ENGINE_VERSION} in ${relative(process.cwd(), project) || '.'}; scenes marked stale — render stills to compare; old engine kept in ${relative(project, backup)}`);
+  return { from, to: ENGINE_VERSION, project, backup };
 }

@@ -49,6 +49,7 @@ test('upgrade replaces engine files, keeps project files, bumps version, marks s
   assert.deepEqual([r.from, r.to], ['0.9.0', ENGINE_VERSION]);
   assert.ok(!existsSync(join(dir, 'js/old-module.js')));
   assert.ok(existsSync(join(dir, 'js/main.js')));
+  assert.ok(existsSync(join(dir, '.work/engine-0.9.0/js/old-module.js')), 'old engine backed up');
   assert.equal(readFileSync(join(dir, 'scenes/01-a.js'), 'utf8'), '// mine');
   assert.equal(JSON.parse(readFileSync(join(dir, 'theme.json'))).name, 'kept');
   const s = status(dir);

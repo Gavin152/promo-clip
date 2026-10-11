@@ -1,6 +1,6 @@
 // CLI argument parsing (kept separate so tests can import it without running the CLI).
 /** tiny argv parser: positionals + --flag [value]; BOOL flags never take a value */
-const BOOL = new Set(['scenes', 'web-only', 'audio-only', 'stems', 'no-build', 'quiet', 'help', 'json', 'no-install', 'dry-run', 'verbose', 'need-key', 'nokey', 'keep-mix', 'analyse-only', 'force', 'all', 'png']);
+const BOOL = new Set(['scenes', 'web-only', 'audio-only', 'stems', 'no-build', 'quiet', 'help', 'json', 'no-install', 'dry-run', 'verbose', 'need-key', 'nokey', 'keep-mix', 'analyse-only', 'force', 'all', 'png', 'sheet']);
 /** flags that may repeat: values accumulate into an array (--ref a.png --ref b.png) */
 const MULTI = new Set(['ref']);
 export function parseArgs(argv) {

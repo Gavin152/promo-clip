@@ -21,8 +21,14 @@ const HOUSE_STYLE =
   'background — the entire background must be exactly #FF00FF, no gradients, no shadows falling ' +
   'onto the background. Do not add a ground line, floor, shadow, or horizon under the subject.';
 
-export const USAGE = `  art generate <name> "<prompt>" [--ref F …] [--hires=true] [--size 2K]
-  art process <name|file> [--border N] [--max N] [--nokey] [--out key]
+/** backdrops are full-bleed scenes (drawn with backdrop(), cover-fit), so no magenta and no subject cut-out */
+const BACKDROP_STYLE =
+  ' Draw in a flat 2-D paper-collage illustration style: bold outlines, saturated colours, simple ' +
+  'textures, no photorealism. A full-bleed background scene filling the whole frame, no people or ' +
+  'main subject in the centre (characters are added on top later), no text, no border.';
+
+export const USAGE = `  art generate <name> "<prompt>" [--ref F …] [--hires=true] [--size 2K] [--kind subject|backdrop] [--aspect 16:9|9:16|1:1]
+  art process <name|file> [--border N] [--max N] [--nokey] [--out key] [--kind backdrop]
   art contact                            contact sheet → .work/contact_sheet.jpg
   art check [--max N]                    resolution check (default --max 900)
   art manifest                           scan assets/art + img into manifest.json
@@ -60,6 +66,12 @@ function inProject(project, rel) {
   const full = resolve(project, rel);
   if (full !== resolve(project) && !full.startsWith(resolve(project) + sep)) throw new Error(`path outside the project: ${rel}`);
   return full;
+}
+
+/** aspect ratio of the primary output format (backdrops are generated to fill it) */
+function primaryAspect(project) {
+  const primary = readJson(join(project, 'promo.json'), {})?.output?.primary ?? 'landscape';
+  return { landscape: '16:9', vertical: '9:16', square: '1:1' }[primary] ?? '16:9';
 }
 
 function dataUrlToBuffer(url) {
@@ -107,7 +119,10 @@ async function generate({ project, pos, flags, log }) {
   const imageSize = hires ? '2K' : undefined;
 
   // build prompt: user text + house style
-  const fullPrompt = prompt.trim() + HOUSE_STYLE;
+  const kind = flags.kind ?? 'subject';
+  if (!['subject', 'backdrop'].includes(kind)) throw new Error('--kind must be subject or backdrop');
+  const fullPrompt = prompt.trim() + (kind === 'backdrop' ? BACKDROP_STYLE : HOUSE_STYLE);
+  const aspect = flags.aspect ?? (kind === 'backdrop' ? primaryAspect(project) : '16:9');
 
   // collect reference images
   const refPaths = await collectRefs(project, flags.ref);
@@ -124,7 +139,7 @@ async function generate({ project, pos, flags, log }) {
   const body = {
     messages: [{ role: 'user', content }],
     modalities: ['image', 'text'],
-    image_config: { aspect_ratio: '16:9', ...(imageSize ? { image_size: imageSize } : {}) },
+    image_config: { aspect_ratio: aspect, ...(imageSize ? { image_size: imageSize } : {}) },
   };
 
   // show estimate
@@ -189,14 +204,17 @@ async function processCmd({ project, pos, flags, log }) {
   }
 
   const border = flags.border != null ? Number(flags.border) : 14;
-  const maxSide = flags.max != null ? Number(flags.max) : 900;
-  const nokey = !!flags.nokey;
+  // backdrops fill the frame: 2400 px covers 1080p in every format (art check flags 4K)
+  const maxSide = flags.max != null ? Number(flags.max) : flags.kind === 'backdrop' ? 2400 : 900;
+  const backdrop = flags.kind === 'backdrop';
+  const nokey = !!flags.nokey || backdrop;
   const outKey = flags.out != null ? safeName(flags.out, '--out') : stemName;
 
-  const destPath = join(artDir(project), `${stemName}.png`);
+  const ext = backdrop ? 'jpg' : 'png';
+  const destPath = join(artDir(project), `${stemName}.${ext}`);
 
-  log(`processing ${basename(srcPath)} → assets/art/${stemName}.png …`);
-  const { width, height, groundLine } = await processImage(srcPath, destPath, { border, maxSide, nokey });
+  log(`processing ${basename(srcPath)} → assets/art/${stemName}.${ext} …`);
+  const { width, height, groundLine } = await processImage(srcPath, destPath, { border, maxSide, nokey, jpeg: backdrop });
 
   if (groundLine) {
     log(`warning: probable stray ground line detected under "${stemName}" — check the raw image and erase any line below the subject before re-processing`);
@@ -204,7 +222,7 @@ async function processCmd({ project, pos, flags, log }) {
 
   // update manifest
   const mf = readManifest(project);
-  mf[outKey] = `assets/art/${stemName}.png`;
+  mf[outKey] = `assets/art/${stemName}.${ext}`;
   writeManifest(project, mf);
 
   log(`→ ${width}×${height}  manifest["${outKey}"] set`);

@@ -35,9 +35,10 @@ project
 
 render
   build                                   bundle the player (promo.bundle.js)
-  stills <dir> [t …] [--scenes]           proof frames (--format, --size)
+  stills <dir> [t …] [--scenes] [--sheet] proof frames (--format, --size, --png); --sheet = one labelled image
   export [--format F|--all] [--size S] [--fps N] [--web-only] [--audio-only] [--stems] [--out file] [--no-build]
   qa [--format F] [--size S]              QA report on the exports (exit 2 on issues)
+  layout [--format F]                     overlap / clipping / safe-zone check of every scene (exit 2 on errors)
 
 assets
 ${vo.USAGE}
@@ -70,7 +71,7 @@ async function run(cmd, pos, flags, ctx) {
       const [out, ...times] = pos;
       if (!out || (!times.length && !flags.scenes)) throw new Error('usage: stills <dir> <t…> | --scenes');
       if (!flags['no-build']) await build(project, { quiet: true });
-      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet, png: flags.png });
+      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet, png: flags.png, sheet: !!flags.sheet });
     }
     case 'export': {
       const o = { size, fps: flags.fps, webOnly: !!flags['web-only'], audioOnly: !!flags['audio-only'], stems: !!flags.stems, out: flags.out, noBuild: !!flags['no-build'], quiet: flags.quiet };
@@ -86,6 +87,7 @@ async function run(cmd, pos, flags, ctx) {
       return res;
     }
     case 'qa': return qa.run({ ...ctx, pos, flags });
+    case 'layout': return qa.layout({ ...ctx, pos, flags });
     default: {
       const g = GROUPS[cmd];
       if (!g) throw new Error(`unknown command "${cmd}"\n\n${USAGE}`);

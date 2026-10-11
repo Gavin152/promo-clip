@@ -1,0 +1,9 @@
+{
+  "name": "promo-clip",
+  "displayName": "promo-clip",
+  "version": "0.3.0",
+  "description": "Short animated promo videos for any product, in a hand-drawn paper-collage style: guided discovery, script, AI or your own voice-over, music and art, scenes, 16:9 / 9:16 / 1:1 variants and MP4 export.",
+  "author": { "name": "promo-clip contributors" },
+  "license": "MIT",
+  "keywords": ["video", "promo", "animation", "marketing", "voice-over", "music", "collage"]
+}

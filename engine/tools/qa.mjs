@@ -152,7 +152,7 @@ async function checkQr(page, info, theme, log) {
  * Run layout check for all scenes (at end - 0.5 s) using __frameBoxes.
  * Returns { issues, checks }.
  */
-async function checkLayouts(page, info, format, log) {
+export async function checkLayouts(page, info, format, log) {
   const issues = [];
   const checks = [];
 
@@ -313,4 +313,29 @@ export async function run({ project, flags = {}, log = console.log } = {}) {
 
   log(`QA passed. Reports in ${join(project, 'out')}`);
   return report;
+}
+
+/**
+ * layout [--format F]: overlap / clipping / safe-zone check on every scene's final state, without
+ * exporting (the scenes and formats stages run it after writing layouts). Exit 2 on errors.
+ */
+export async function layout({ project, flags = {}, log = console.log } = {}) {
+  const state = loadState(project);
+  const formats = flags.format ? [flags.format] : state.output?.formats ?? ['landscape'];
+  const out = [];
+  for (const format of formats) {
+    const { page, info, close } = await openPlayer(project, { format, size: '720p' });
+    try {
+      log(`${format}:`);
+      const r = await checkLayouts(page, info, format, log);
+      for (const c of r.checks) log(`  warning ${c.scene}: ${c.msg ?? c.kind}`);
+      for (const i of r.issues) log(`  ERROR ${i.scene}: ${i.msg ?? i.kind}`);
+      out.push({ format, ...r });
+    } finally {
+      await close();
+    }
+  }
+  const errors = out.reduce((n, r) => n + r.issues.length, 0);
+  if (errors) throw new QaFail(`layout check: ${errors} error(s)`, out);
+  return out;
 }

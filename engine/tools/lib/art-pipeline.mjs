@@ -91,18 +91,17 @@ async function dieCut(buf, border) {
 /**
  * Process a raw image into a collage sticker.
  *   nokey  — skip chroma key (photos/screenshots); just resize
+ *   jpeg   — write JPEG (opaque backdrops / photos)
  *   border — die-cut border radius in px (0 = no border)
  *   maxSide — longest output side in px
  * Returns { width, height, groundLine }.
  */
-export async function processImage(srcPath, destPath, { border = 14, maxSide = 900, nokey = false } = {}) {
+export async function processImage(srcPath, destPath, { border = 14, maxSide = 900, nokey = false, jpeg = false } = {}) {
   mkdirSync(dirname(destPath), { recursive: true });
 
   if (nokey) {
-    const info = await sharp(srcPath)
-      .resize(maxSide, maxSide, { fit: 'inside' })
-      .png({ compressionLevel: 9 })
-      .toFile(destPath);
+    const img = sharp(srcPath).resize(maxSide, maxSide, { fit: 'inside', withoutEnlargement: true });
+    const info = await (jpeg ? img.flatten({ background: '#ffffff' }).jpeg({ quality: 88 }) : img.png({ compressionLevel: 9 })).toFile(destPath);
     return { width: info.width, height: info.height, groundLine: false };
   }
 

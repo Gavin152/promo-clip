@@ -203,7 +203,7 @@ async function qa(ctx) {
       const env = envelope(decode(sttFile));
       const brandWarns = [];
       for (const bw of brandWords) {
-        const w = sttData.words.find((x) => x.word.toLowerCase().replace(/[^a-z]/g, '') === bw.toLowerCase());
+        const w = sttData.words.find((x) => wordKey(x.word) === wordKey(bw));
         if (w) {
           const cm = closureMs(env, w);
           if (cm > 50) brandWarns.push(`"${bw}" closure ${cm.toFixed(0)} ms`);
@@ -247,7 +247,7 @@ async function rank(ctx) {
     if (existsSync(wavPath)) {
       const env = envelope(decode(wavPath));
       for (const bw of brandWords) {
-        const w = sttData.words.find((x) => x.word.toLowerCase().replace(/[^a-z]/g, '') === bw.toLowerCase());
+        const w = sttData.words.find((x) => wordKey(x.word) === wordKey(bw));
         if (w) brandClosure.push(closureMs(env, w));
       }
     }

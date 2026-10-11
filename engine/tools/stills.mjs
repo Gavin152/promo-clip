@@ -1,17 +1,19 @@
 // Proof stills: JPEG frames at given film times, or one per scene (its final state, just before the cut).
 //   stills(project, outDir, { times: [2, 8], format, size })      -> f_00002.00.jpg …
 //   stills(project, outDir, { scenes: true, format, size })       -> <scene-id>.jpg …
+//   sheet: true also writes <outDir>/sheet.jpg, all stills in one labelled image
 // A scene's still is taken HOLD seconds before its end: after its last entrance, before the cut's
 // swipe (±0.32 s) or the closing fade (0.45 s) covers it.
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { openPlayer, frameJpeg, framePng } from './lib/page.mjs';
+import { makeContactSheet } from './lib/art-pipeline.mjs';
 
 export const HOLD = 0.5;
 /** time label used in still file names: 2 -> '00002.00' */
 export const tLabel = (t) => t.toFixed(2).padStart(8, '0');
 
-export async function stills(project, outDir, { times = [], scenes = false, format = 'landscape', size = '1080p', quality = 0.85, quiet = false, png = false } = {}) {
+export async function stills(project, outDir, { times = [], scenes = false, format = 'landscape', size = '1080p', quality = 0.85, quiet = false, png = false, sheet = false } = {}) {
   await mkdir(outDir, { recursive: true });
   const usePng = png === true || png === 'true';
   const { page, info, close } = await openPlayer(project, { format, size });
@@ -30,5 +32,13 @@ export async function stills(project, outDir, { times = [], scenes = false, form
   } finally {
     await close();
   }
-  return { info, written };
+  // one image with every still, labelled (what a gate shows)
+  let sheetPath = null;
+  if (sheet && written.length) {
+    sheetPath = join(outDir, 'sheet.jpg');
+    const label = (w) => jobs.find((j) => join(outDir, j.file) === w.file).file.replace(/\.(jpg|png)$/, '');
+    await makeContactSheet(written.map((w) => ({ key: label(w), path: w.file, fullPath: w.file, meta: null })), sheetPath, { cols: Math.min(4, written.length) });
+    if (!quiet) console.log(`sheet -> ${sheetPath}`);
+  }
+  return { info, written, sheet: sheetPath };
 }
