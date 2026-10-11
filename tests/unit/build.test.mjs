@@ -8,7 +8,7 @@ import { build, buildPaths } from '../../engine/tools/build-assets.mjs';
 const fixture = new URL('../../fixtures/sample-15s/', import.meta.url).pathname;
 function copy() {
   const dir = mkdtempSync(join(tmpdir(), 'promo-build-'));
-  cpSync(fixture, dir, { recursive: true, filter: (s) => !/\/(\.work|out|ref)(\/|$)/.test(s) });
+  cpSync(fixture, dir, { recursive: true, filter: (s) => !/\/(\.work|out|ref|promo\.bundle\.js)(\/|$)/.test(s) });
   return dir;
 }
 
