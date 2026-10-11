@@ -27,7 +27,7 @@ Done when every take is transcribed, QA'd and ranked.
 1. `vo import <file>` → `assets/vo/vo.wav`.
 2. Word times: `vo stt` then `vo timing` — or, when the user has word times already (a forced aligner, an earlier export), `vo timing --words <file>` with no API call.
 3. `vo gaps`.
-4. `vo qa assets/vo/vo.aai.json` (after `vo stt`). **Gate:** the diff — an own recording that deviates from the script is the user's call; offer to update `script.md` to match what was said.
+4. `vo qa assets/vo/vo.aai.json` after `vo stt`, or `vo qa vo/timing_nogaps.json` with own word times. **Gate:** the diff — an own recording that deviates from the script is the user's call; offer to update `script.md` to match what was said.
 
 ## Finish (both paths)
 

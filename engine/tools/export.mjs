@@ -37,7 +37,7 @@ export async function exportVideo(project, o = {}) {
   if (![24, 25, 30, 60].includes(fps)) throw new Error(`fps ${fps} not supported (24, 25, 30, 60)`);
   const size = o.size ?? '1080p';
   const log = o.quiet ? () => {} : console.log;
-  if (!o.noBuild) await build(project, { quiet: o.quiet });
+  if (!o.noBuild) await build(project, { quiet: o.quiet, audioOnly: !!o.audioOnly });
 
   const { page, info, close } = await openPlayer(project, { format: o.format ?? 'landscape', size });
   const format = info.format; // a custom size may map to another layout

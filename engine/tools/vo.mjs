@@ -16,7 +16,7 @@ export { setClient }; // re-export so tests can inject a fake client
 export const USAGE = `  vo generate <name> [--voice V] [--model M] [--tag "[…]"] [--script F] [--takes N]
   vo import <file>                       convert your own recording → assets/vo/vo.wav
   vo stt [file]                          STT (WAV only); default: assets/vo/vo.wav
-  vo qa <stt.json> [script.md]          word diff + pauses + brand closure; exit 2 on errors
+  vo qa <stt.json|timing.json> [script.md]  word diff + pauses + brand closure; exit 2 on errors
   vo rank <take…>                        rank takes: diff < closure < pauses < duration
   vo process <take>                      trim/declip/HPF/fade/gain → assets/vo/vo.wav
   vo timing [--vo-start S] [--words F]              timing.json from vo.aai.json + script (also seeds no-gaps pair)
@@ -177,13 +177,9 @@ async function qa(ctx) {
   const scriptPath = pos[1] ?? join(project, 'script.md');
   const theme = readJson(join(project, 'theme.json'), {});
 
-  // --words <file>: your own word times instead of STT (timing.json-shaped {words:[{w,start,end}]},
-  // or any transcript with words[{word,start,end}]), e.g. from a forced aligner; no API call needed
-  const own = flags.words ? JSON.parse(readFileSync(flags.words, 'utf8')) : null;
-  if (!own && !existsSync(sttPath)) throw new Error('no assets/vo/vo.aai.json: run "vo stt" first, or pass --words <file> with your own word times');
-  const sttData = own
-    ? { model: 'own word times', words: own.words.map((w) => ({ word: w.word ?? w.w, start: w.start, end: w.end, confidence: w.conf ?? w.confidence ?? null })) }
-    : JSON.parse(readFileSync(sttPath, 'utf8'));
+  // an STT transcript (<take>.aai.json) or word times in timing.json shape — analyseTranscript reads both
+  if (!existsSync(sttPath)) throw new Error(`no such transcript: ${sttPath}`);
+  const sttData = JSON.parse(readFileSync(sttPath, 'utf8'));
   const ttsText = parseScript(readFileSync(scriptPath, 'utf8')).ttsText;
   const canon = buildCanon(theme);
   const r = analyseTranscript(sttData, ttsText, canon);
@@ -198,12 +194,12 @@ async function qa(ctx) {
   // brand closure (warning only; ranks penalise it)
   const brandWords = theme.brandWords ?? [];
   if (brandWords.length) {
-    const sttFile = sttPath.replace('.aai.json', '.wav');
-    if (existsSync(sttFile)) {
+    const sttFile = sttPath.endsWith('.aai.json') ? sttPath.replace(/\.aai\.json$/, '.wav') : null;
+    if (sttFile && existsSync(sttFile)) {
       const env = envelope(decode(sttFile));
       const brandWarns = [];
       for (const bw of brandWords) {
-        const w = sttData.words.find((x) => wordKey(x.word) === wordKey(bw));
+        const w = sttData.words.find((x) => wordKey(x.word ?? x.w) === wordKey(bw));
         if (w) {
           const cm = closureMs(env, w);
           if (cm > 50) brandWarns.push(`"${bw}" closure ${cm.toFixed(0)} ms`);

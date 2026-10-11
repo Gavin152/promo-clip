@@ -19,11 +19,12 @@ const ENGINE_FONTS = [
 const FONT_MIME = { '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.otf': 'font/otf' };
 
 /** files a buildable project needs; returns the list of missing ones (project-relative) */
-export function missingInputs(project) {
-  const need = ['theme.json', 'manifest.json', 'timeline.js', 'vo/timing.json', 'assets/music/cues.json', 'assets/vo/vo.wav'];
+export function missingInputs(project, { audioOnly = false } = {}) {
+  const need = ['theme.json', 'manifest.json', 'vo/timing.json', 'assets/music/cues.json', 'assets/vo/vo.wav'];
+  if (!audioOnly) need.push('timeline.js');
   const miss = need.filter((p) => !existsSync(join(project, p)));
   if (!musicTrack(project)) miss.push('assets/music/track.(wav|mp3|m4a|ogg)');
-  if (!sceneFiles(project).length) miss.push('scenes/*.js');
+  if (!audioOnly && !sceneFiles(project).length) miss.push('scenes/*.js');
   return miss;
 }
 export function musicTrack(project) {
@@ -46,12 +47,16 @@ function fontsCss(project) {
     .join('\n');
 }
 
+// before the scenes stage there is no timeline.js yet: audio-only builds (music mix/check) use this stub
+const STUB_TIMELINE = '// generated: no timeline.js yet (audio-only build)\nexport default {};\nexport const TRANSITIONS = [];\n';
+
 const aliasPlugin = (project, buildDir) => ({
   name: 'promo-aliases',
   setup(b) {
     const map = (p) => {
       if (p === '@scenes') return join(buildDir, 'scenes.js');
       if (p.startsWith('@engine/')) return join(ENGINE, 'js', p.slice(8));
+      if (p === '@project/timeline.js' && !existsSync(join(project, 'timeline.js'))) return join(buildDir, 'timeline.stub.js');
       if (p.startsWith('@project/')) return join(project, p.slice(9));
       if (p.startsWith('@build/')) return join(buildDir, p.slice(7));
       return null;
@@ -65,13 +70,15 @@ const aliasPlugin = (project, buildDir) => ({
 });
 
 /** builds <project>/promo.bundle.js; returns { bundle, bytes, scenes } */
-export async function build(project, { quiet = false } = {}) {
+/** audioOnly: allowed before timeline.js and scenes exist (the music stage renders stems) */
+export async function build(project, { quiet = false, audioOnly = false } = {}) {
   project = resolve(project);
-  const miss = missingInputs(project);
+  const miss = missingInputs(project, { audioOnly });
   if (miss.length) throw new Error(`cannot build ${project}: missing ${miss.join(', ')}`);
   const buildDir = join(project, '.work/build');
   mkdirSync(buildDir, { recursive: true });
 
+  writeFileSync(join(buildDir, 'timeline.stub.js'), STUB_TIMELINE);
   const scenes = sceneFiles(project);
   const imports = scenes.map((f, i) => `import s${i} from ${JSON.stringify(join(project, 'scenes', f))};`).join('\n');
   const ids = scenes.map((f, i) => `withId(s${i}, ${JSON.stringify(f.replace(/\.m?js$/, ''))})`).join(', ');

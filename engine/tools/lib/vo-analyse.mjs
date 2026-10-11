@@ -56,7 +56,7 @@ export function analyseTranscript(stt, ttsText, canon) {
 
   // hypothesis: merge multi-word STT tokens that canonicalise together
   const raw = stt.words.map((w) => ({
-    word: String(w.word ?? '').trim(),
+    word: String(w.word ?? w.w ?? '').trim(), // STT words, or timing.json words ({w, start, end})
     start: w.start,
     end: w.end,
     conf: w.confidence ?? w.probability ?? null,

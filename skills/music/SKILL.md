@@ -29,7 +29,7 @@ Done when every candidate has a score.
 
 ## Mix (both paths)
 
-1. `music mix` — renders the stems and sets duck level and section trims so the voice sits ~13.5 dB above the music.
+1. `music mix` — renders the stems (works before the scenes exist: an audio-only build) and sets duck level and section trims so the voice sits ~13.5 dB above the music.
 2. `music check` — exit 2 if the median is more than 2 dB off. Run `music mix` once more on exit 2; if it still fails, report the numbers.
 
 Done when `music check` passes. `stage music done` (export goes stale).
