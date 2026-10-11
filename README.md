@@ -1,4 +1,15 @@
-# promo-clip
+<h1 align="center">promo-clip</h1>
+
+<p align="center"><b>Turn a product into a short animated promo video, from script to MP4, inside Claude Code.</b></p>
+
+<p align="center">
+  <a href="https://github.com/Gavin152/promo-clip/actions/workflows/ci.yml"><img src="https://github.com/Gavin152/promo-clip/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Gavin152/promo-clip" alt="License"></a>
+  <img src="https://img.shields.io/badge/version-0.5.0-blue" alt="Version 0.5.0">
+  <img src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white" alt="Node >= 20">
+  <a href="https://docs.claude.com/en/docs/claude-code/plugins"><img src="https://img.shields.io/badge/Claude_Code-plugin-D97757?logo=claude&logoColor=white" alt="Claude Code plugin"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platforms: macOS, Linux, Windows">
+</p>
 
 A Claude Code plugin that makes short animated promo videos for any product, in a hand-drawn
 paper-collage style. You answer a few questions; Claude writes the script, gets a voice-over, music

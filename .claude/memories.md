@@ -73,3 +73,4 @@
 - Cross-platform: Chrome discovery falls back to Edge (Windows/macOS/Linux); `--no-sandbox` automatically when root on Linux (containers) or `CHROME_NO_SANDBOX=1`; tests use `fileURLToPath` (never `URL.pathname`). CI (`.github/workflows/ci.yml`, `shell: bash` everywhere): unit + `cli check` on 3 OS + Node 20; integration in `node:22-bookworm` container (pixel-diff) and on macOS/Windows runners (pixel-diff off).
 - Placeholder scenes now carry `placeholder: true` (template in skills/scenes) in addition to the empty-`draw() {}` regex.
 - `mode`/`budget` without a value are read-only (they used to rewrite promo.json).
+- README header (2026-10-12): centered title + bold one-liner + badge row (CI, licence, version, Node ≥20, Claude Code plugin, platforms). The version badge is STATIC (`badge/version-0.5.0`), so bump it together with plugin.json (or switch to `github/v/release` once releases are tagged).
