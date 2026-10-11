@@ -21,7 +21,7 @@ const HOUSE_STYLE =
   'background — the entire background must be exactly #FF00FF, no gradients, no shadows falling ' +
   'onto the background. Do not add a ground line, floor, shadow, or horizon under the subject.';
 
-export const USAGE = `  art generate <name> "<prompt>" [--ref F[,F]] [--hires=true] [--size 2K]
+export const USAGE = `  art generate <name> "<prompt>" [--ref F …] [--hires=true] [--size 2K]
   art process <name|file> [--border N] [--max N] [--nokey] [--out key]
   art contact                            contact sheet → .work/contact_sheet.jpg
   art check [--max N]                    resolution check (default --max 900)
@@ -78,7 +78,7 @@ async function collectRefs(project, refFlag) {
   const refs = [];
   // from --ref flag (comma-separated)
   if (refFlag) {
-    for (const p of String(refFlag).split(',').map(s => s.trim()).filter(Boolean)) {
+    for (const p of [refFlag].flat().flatMap((r) => String(r).split(',')).map(s => s.trim()).filter(Boolean)) {
       const full = resolve(project, p);
       // refs are sent to the image API: only image files, so a typo can't upload e.g. a key file
       if (!REF_EXT.test(full)) throw new Error(`--ref must be a .png, .jpg or .webp image: ${p}`);

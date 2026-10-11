@@ -207,8 +207,11 @@ test('music import on fixture → offset ≈ -5.59 s, film.final ≈ 10.41 s', {
   assert.ok(existsSync(cuesPath), 'cues.json was not written');
   const cues = JSON.parse(readFileSync(cuesPath, 'utf8'));
 
-  // offset should be ≈ -5.59 s (±0.5 s tolerance: DSP from compressed MP3 may shift slightly)
-  assert.ok(Math.abs(cues.offset - (-5.59)) < 0.5, `offset expected ≈ -5.59, got ${cues.offset}`);
+  // offset ≈ -5.59 s: the final hit must land within a frame or two of the word (onset latency ~25-40 ms)
+  assert.ok(Math.abs(cues.offset - (-5.59)) < 0.06, `offset expected ≈ -5.59, got ${cues.offset}`);
+  // the beat grid sits on the kick (beats at whole half-seconds), not on the off-beat hats
+  const phase = ((cues.beats[2] % 0.5) + 0.5) % 0.5;
+  assert.ok(Math.min(phase, 0.5 - phase) < 0.05, `beat grid phase ${phase} should be ~0 (kick), not ~0.25 (hats)`);
 
   // film.final should be ≈ 10.41 s (±0.5 s tolerance)
   assert.ok(Math.abs(cues.film.final - 10.41) < 0.5, `film.final expected ≈ 10.41, got ${cues.film.final}`);

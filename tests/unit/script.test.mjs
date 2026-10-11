@@ -50,3 +50,10 @@ test('args: positionals, valued flags, booleans, --k=v', () => {
   assert.deepEqual(pos, ['stills', 'out', '2', '8']);
   assert.deepEqual(flags, { format: 'vertical', scenes: true, size: '4K', json: true });
 });
+
+test('args: repeatable --ref accumulates, --png is boolean', () => {
+  const { pos, flags } = parseArgs(['generate', 'a', '--ref', 'x.png', '--ref=y.png', '--png', 'z']);
+  assert.deepEqual(flags.ref, ['x.png', 'y.png']);
+  assert.equal(flags.png, true);
+  assert.deepEqual(pos, ['generate', 'a', 'z']);
+});

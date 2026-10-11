@@ -19,7 +19,7 @@ export const USAGE = `  vo generate <name> [--voice V] [--model M] [--tag "[…]
   vo qa <stt.json> [script.md]          word diff + pauses + brand closure; exit 2 on errors
   vo rank <take…>                        rank takes: diff < closure < pauses < duration
   vo process <take>                      trim/declip/HPF/fade/gain → assets/vo/vo.wav
-  vo timing [--vo-start S]              timing.json from vo.aai.json + script (also seeds no-gaps pair)
+  vo timing [--vo-start S] [--words F]              timing.json from vo.aai.json + script (also seeds no-gaps pair)
   vo gaps [--min 0.85] [--max 1.0]      widen scene-boundary pauses in vo.wav (rebuilds from no-gaps)`;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -177,7 +177,13 @@ async function qa(ctx) {
   const scriptPath = pos[1] ?? join(project, 'script.md');
   const theme = readJson(join(project, 'theme.json'), {});
 
-  const sttData = JSON.parse(readFileSync(sttPath, 'utf8'));
+  // --words <file>: your own word times instead of STT (timing.json-shaped {words:[{w,start,end}]},
+  // or any transcript with words[{word,start,end}]), e.g. from a forced aligner; no API call needed
+  const own = flags.words ? JSON.parse(readFileSync(flags.words, 'utf8')) : null;
+  if (!own && !existsSync(sttPath)) throw new Error('no assets/vo/vo.aai.json: run "vo stt" first, or pass --words <file> with your own word times');
+  const sttData = own
+    ? { model: 'own word times', words: own.words.map((w) => ({ word: w.word ?? w.w, start: w.start, end: w.end, confidence: w.conf ?? w.confidence ?? null })) }
+    : JSON.parse(readFileSync(sttPath, 'utf8'));
   const ttsText = parseScript(readFileSync(scriptPath, 'utf8')).ttsText;
   const canon = buildCanon(theme);
   const r = analyseTranscript(sttData, ttsText, canon);
@@ -331,7 +337,13 @@ async function timing(ctx) {
   const theme = readJson(join(project, 'theme.json'), {});
   const brandWords = theme.brandWords ?? [];
 
-  const sttData = JSON.parse(readFileSync(sttPath, 'utf8'));
+  // --words <file>: your own word times instead of STT (timing.json-shaped {words:[{w,start,end}]},
+  // or any transcript with words[{word,start,end}]), e.g. from a forced aligner; no API call needed
+  const own = flags.words ? JSON.parse(readFileSync(flags.words, 'utf8')) : null;
+  if (!own && !existsSync(sttPath)) throw new Error('no assets/vo/vo.aai.json: run "vo stt" first, or pass --words <file> with your own word times');
+  const sttData = own
+    ? { model: 'own word times', words: own.words.map((w) => ({ word: w.word ?? w.w, start: w.start, end: w.end, confidence: w.conf ?? w.confidence ?? null })) }
+    : JSON.parse(readFileSync(sttPath, 'utf8'));
   const scriptMd = readFileSync(scriptPath, 'utf8');
   const canon = buildCanon(theme);
   const r = analyseTranscript(sttData, parseScript(scriptMd).ttsText, canon);

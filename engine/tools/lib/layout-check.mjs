@@ -89,7 +89,7 @@ export function findClipping(boxes, format, tolerance = 2) {
 
 /**
  * Find boxes that violate the vertical safe zone (vertical format only).
- * Only applied when format === 'vertical'.
+ * Only applied when format === 'vertical', and only to boxes that hold text (text !== false).
  * Returns an array of { box, violation: 'above' | 'below' }.
  */
 export function findSafeZoneViolations(boxes, format) {
@@ -97,6 +97,8 @@ export function findSafeZoneViolations(boxes, format) {
   const { y0, y1 } = SAFE_ZONE.vertical;
   const violations = [];
   for (const b of boxes) {
+    // the safe zone is for text (platform UI covers the top and bottom); decorative stickers may bleed
+    if (b.text === false) continue;
     // a box violates if any part of it falls outside the safe band
     if (b.y0 < y0) violations.push({ box: b, violation: 'above', safeY: y0 });
     else if (b.y1 > y1) violations.push({ box: b, violation: 'below', safeY: y1 });

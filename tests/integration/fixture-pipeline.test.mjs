@@ -140,12 +140,8 @@ test('fixture: export square 720p web-only', { timeout: 300_000 }, () => {
   assert.equal(r.status, 0, `export square failed:\n${r.stderr}`);
 });
 
-test('fixture: qa passes (landscape)', { timeout: 300_000 }, () => {
-  // QA is run for landscape only. The fixture's vertical/square layouts contain decorative
-  // elements (cloud at y≈230, sun at y=250) that intentionally sit near the top edge and
-  // trip the vertical safe-zone check (y<250). Those are known fixture-layout issues that
-  // need updating in the scene files (not owned by this module). See final report for details.
-  const r = cli(['qa', '--format', 'landscape', '--size', '720p'], { timeout: 300_000 });
+test('fixture: qa passes (all formats in promo.json)', { timeout: 300_000 }, () => {
+  const r = cli(['qa'], { timeout: 300_000 });
   if (r.status !== 0) console.error('qa stderr:', r.stderr);
   assert.equal(r.status, 0, `qa failed (exit ${r.status}):\n${r.stderr}`);
   assert.ok(existsSync(join(tmpDir, 'out/qa_report.json')), 'qa_report.json must be written');

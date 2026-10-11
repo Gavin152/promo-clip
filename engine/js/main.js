@@ -204,7 +204,7 @@ window.__framePNG = (t) => {
 };
 /**
  * Render frame t and return all sticker bboxes in design units.
- * [{x0, y0, x1, y1, scene}] — design units = (device px + crop) / scale.
+ * [{x0, y0, x1, y1, scene, text}] (text = the sticker contains text) — design units = (device px + crop) / scale.
  * Used by the QA layout checker.
  */
 window.__frameBoxes = (t) => {
@@ -216,6 +216,7 @@ window.__frameBoxes = (t) => {
     x1: (b.x1 + CROP_X) / SCALE,
     y1: (b.y1 + CROP_Y) / SCALE,
     scene: b.scene,
+    text: b.text,
   }));
   S.collect = null;
   return boxes;

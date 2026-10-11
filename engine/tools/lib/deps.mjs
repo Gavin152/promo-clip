@@ -24,7 +24,7 @@ export async function checkDeps({ project, needKey = false, keyLoader } = {}) {
 
   const toolsDir = join(ENGINE, 'tools');
   const req = createRequire(join(toolsDir, 'package.json'));
-  const pkgs = ['esbuild', 'puppeteer-core', 'ffmpeg-static', 'sharp', 'qrcode'];
+  const pkgs = ['esbuild', 'puppeteer-core', 'ffmpeg-static', 'sharp', 'qrcode', 'jsqr'];
   const missing = pkgs.filter((p) => { try { req.resolve(p); return false; } catch { return true; } });
   out.push({ name: 'tool packages', ok: !missing.length, detail: missing.length ? `missing ${missing.join(', ')}` : 'installed', ...(missing.length ? { hint: `Run \`npm install\` in ${toolsDir}` } : {}) });
 

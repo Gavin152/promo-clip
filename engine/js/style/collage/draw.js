@@ -69,6 +69,7 @@ export const S = {
   border: 11, // sticker border half-width
   t: 0,
   bb: null, // device-space bbox accumulated during the sticker back pass
+  bbText: false, // set by text() during a back pass: the sticker holds text (QA safe zone)
   // QA hooks (null when idle — zero cost to normal rendering):
   scene: null,   // set by main.js to the current scene id during __frameBoxes
   collect: null, // array filled with {x0,y0,x1,y1,scene} device-px bboxes by sticker(); null = off
@@ -331,8 +332,13 @@ export function sticker(ctx, fn, o = {}) {
   S.pass = 'back';
   S.border = border;
   S.bb = [Infinity, Infinity, -Infinity, -Infinity];
+  const prevText = S.bbText;
+  S.bbText = false;
   fn(lctx);
   let bb = S.bb;
+  const hasText = S.bbText;
+  S.bbText = prevText || hasText;
+  const raw = bb[0] === Infinity ? null : bb.slice();
   S.pass = prevPass;
   S.border = prevB;
   S.bb = prevBB;
@@ -340,8 +346,9 @@ export function sticker(ctx, fn, o = {}) {
   bb = [Math.max(0, Math.floor(bb[0]) - 2), Math.max(0, Math.floor(bb[1]) - 2), Math.min(layer.width, Math.ceil(bb[2]) + 2), Math.min(layer.height, Math.ceil(bb[3]) + 2)];
   lastBB = bb;
   // collect bbox for QA layout check (zero cost when S.collect is null)
-  if (S.collect !== null) {
-    S.collect.push({ x0: bb[0], y0: bb[1], x1: bb[2], y1: bb[3], scene: S.scene });
+  // (unclamped, so boxes running off the frame show up as clipping)
+  if (S.collect !== null && raw) {
+    S.collect.push({ x0: raw[0], y0: raw[1], x1: raw[2], y1: raw[3], scene: S.scene, text: hasText });
   }
   if (prevBB) {
     // nested sticker: extend the parent's bbox too
@@ -482,7 +489,10 @@ export function text(ctx, str, x, y, o = {}) {
     const sc = vis < 1 ? 0.4 + 0.6 * vis : 1;
     ctx.scale(sc, sc);
     if (back) {
-      bbAdd(ctx, 0, 0, Math.max(w, size) + S.border * 2);
+      S.bbText = true;
+      // glyph box (ascent/descent ≈ 0.75 em around the middle baseline) + the white border stroke
+      const pad = S.border + (o.strokeW ?? 0) + 4, hx = w / 2, hy = size * 0.75;
+      for (const [px, py] of [[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]]) bbAdd(ctx, px, py, pad);
       ctx.lineJoin = 'round';
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = S.border * 2 + (o.strokeW ?? 0) * 2;

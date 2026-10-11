@@ -103,14 +103,26 @@ export function tempo(on, nF) {
 }
 
 // ---------------------------------------------------------------- beat grid
-/** refine period + phase with a comb filter; snap each beat to the nearest onset */
-export function beatGrid(on, nF, bpm) {
+/**
+ * refine period + phase with a comb filter; snap each beat to the nearest onset.
+ * low (optional): low-band onset envelope. The phase comb weighs it over the broadband flux
+ * (x2, both mean-normalised), so the grid locks onto kick/bass rather than off-beat hi-hats.
+ */
+export function beatGrid(on, nF, bpm, low = null) {
+  let env = on;
+  if (low) {
+    // mean-normalised so neither envelope dominates by scale; low weighted x2 because beats sit on
+    // kick/bass, while hi-hats (sharp, broadband) often sit on the off-beat
+    const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length || 1;
+    const mo = mean(on), ml = mean(low);
+    env = Float32Array.from(on, (v, i) => v / mo + (2 * (low[i] ?? 0)) / ml);
+  }
   let best = { s: -1 };
   for (let b = bpm * 0.985; b <= bpm * 1.015; b += 0.02) {
     const P = (60 / b) * FPS;
     for (let ph = 0; ph < P; ph += 0.25) {
       let s = 0;
-      for (let f = ph; f < nF; f += P) s += interp(on, f);
+      for (let f = ph; f < nF; f += P) s += interp(env, f);
       if (s > best.s) best = { s, P, ph, bpm: b };
     }
   }
@@ -182,6 +194,13 @@ export function hits(rms, on, nF, dur, beatTimes, dbs) {
   }
   // fallback: last beat before end
   if (fin == null) fin = beatTimes.length ? beatTimes.filter((t) => t < end - 0.5).at(-1) ?? beatTimes.at(-1) : 0;
+  // the button is placed on its attack, not on the grid: snap to the strongest onset within ±0.3 s
+  {
+    const f0 = Math.round((fin - (N / 2) / SR) * FPS), R = Math.round(0.3 * FPS);
+    let bf = f0, bv = -1;
+    for (let k = Math.max(0, f0 - R); k <= Math.min(nF - 1, f0 + R); k++) if ((on[k] ?? 0) > bv) { bv = on[k]; bf = k; }
+    if (bv > 0) fin = bf / FPS + (N / 2) / SR;
+  }
 
   return { reveal: +reveal.toFixed(3), revealLiftDb: +rv.toFixed(1), final: +fin.toFixed(3), end, snapFinalDownbeat: nearest(dbs, fin) };
 }

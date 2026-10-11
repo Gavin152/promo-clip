@@ -50,10 +50,8 @@ jobs:
           node ../../tests/pixel-diff.mjs .work/stills/landscape ref/stills/landscape --tol 8
           node ../../tests/pixel-diff.mjs .work/stills/vertical  ref/stills/vertical  --tol 8
           node ../../tests/pixel-diff.mjs .work/stills/square    ref/stills/square    --tol 8
-          # QA landscape only: the fixture vertical/square layouts have decorative elements
-          # (cloud y≈230, sun y=250) that trip the vertical safe-zone check (y<250). Those are
-          # known fixture-layout issues in scene files. See docs/KNOWN-ISSUES.md.
-          node ../../engine/tools/cli.mjs qa --format landscape --size 720p
+          # QA every format x size in promo.json (3 formats at 720p)
+          node ../../engine/tools/cli.mjs qa
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4

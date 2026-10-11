@@ -1,7 +1,9 @@
 # Project Memories
 
 ## Status
-- Phase 1 (engine extraction) done 2026-10-11 on branch `phase1-engine`. Phases 2–5 (full CLI, plugin skills, scene agents, polish) not started.
+- Phase 1 (engine extraction) done 2026-10-11 on branch `phase1-engine`.
+- Phase 2 (CLI) done 2026-10-11 on branch `phase2-cli` (based on phase1-engine; neither merged to main). Acceptance verified: fresh `setup → vo import → vo timing --words → vo gaps → music import → mix → check → export --all → qa` with no API calls passes in 3 formats. Paid paths (TTS/STT/Lyria/images) are only tested with fake clients — no live smoke test yet (no key used).
+- Phases 3–5 (plugin skills, scene agents, polish) not started.
 
 ## Engine layout and conventions (engine/)
 - `engine/js/` = browser engine (ESM, bundled by esbuild into `<video>/promo.bundle.js`, IIFE so file:// works). `engine/tools/` = Node CLI (`cli.mjs build | stills | export`), deps in `engine/tools/node_modules` (run `npm install` there).
@@ -18,13 +20,13 @@
 - `make-fixture.mjs` regenerates all placeholder assets deterministically: per-word procedural "babble" VO (exact word times, no espeak/STT), 120 BPM procedural loop → `track.mp3` via ffmpeg-static with the final hit placed on "now", sharp-rendered SVG art, QR via `qrcode`. ~15 s, 3 scenes, layouts for all 3 formats.
 - Verified 2026-10-11: builds; stills in 3 formats; exports 3 formats × 720p and 1080p (−14 LUFS); 4K vertical and 1080x1350 stills.
 - `ref/stills/{landscape,vertical,square}/*.png` — 9 PNG reference stills (lossless, 720p, `--png=true`) for pixel-diff baseline. GPU noise ≤8/255 between runs (tol=8).
-- KNOWN: vertical/square layouts place decorative elements (cloud y≈230, sun y=250 center) outside the safe zone y=250–1750. QA run for landscape only until scene files are updated.
+- Fixture vertical 02-feature layout was moved inside the safe zone (tags y 1600); QA + CI now check all 3 formats. Fixture cues `duckDb -10` so `music check` passes.
 
 ## QA tools (tasks 2i+2j, 2026-10-11)
 - `engine/tools/qa.mjs` `run(ctx)`: checks all promo.json formats×sizes (or --format/--size); probes MP4 (ffmpeg stderr), loudness (−14 ±1 LUFS, −1+0.2 dBTP), audio/video delta ≤0.1 s, QR decode (jsQR+sharp .ensureAlpha()), layout check; writes `out/qa_report.json` + `.md`; throws QaFail (exit 2) on issues.
 - `engine/tools/lib/qa-probe.mjs`: ffmpeg-only MP4 probe — `probeFile()` (container duration, size, fps), `streamDuration()` (per-stream via -map + -f null decode), `parseHMSS()`.
 - `engine/tools/lib/layout-check.mjs`: pure functions — `findOverlaps` (minArea=400 du², skips containment pairs), `findClipping` (tol=2 du), `findSafeZoneViolations` (vertical only, y 250–1750), `checkLayout` (overlaps=warning, clipping/safe-zone=error).
-- `engine/js/style/collage/draw.js`: `S.collect` + `S.scene` hooks (null=off, zero cost). `sticker()` pushes `{x0,y0,x1,y1,scene}` device-px bboxes when collect is active.
+- `engine/js/style/collage/draw.js`: `S.collect` + `S.scene` hooks (null=off, zero cost). `sticker()` pushes UNCLAMPED `{x0,y0,x1,y1,scene,text}` device-px bboxes when collect is active (clamping would hide clipping). `text` = the sticker contains text (`S.bbText` set by `text()` in the back pass); the vertical safe zone (y 250–1750) is enforced only on text boxes — decorative stickers may bleed. Text bbox = glyph rect (±w/2, ±0.75 em) + border; the old per-glyph circle was ~100 units too loose.
 - `engine/js/main.js`: `S.scene = sc.id` per scene; `window.__frameBoxes(t)` → design-unit bboxes; `window.__framePNG(t)` → lossless PNG data URL.
 - `engine/tools/lib/page.mjs`: `framePng(page,t)`, `frameBoxes(page,t)` helpers.
 - `engine/tools/stills.mjs`: backward-compatible `png: true` / `--png=true` option for PNG stills.
@@ -33,3 +35,13 @@
 - `tests/integration/fixture-pipeline.test.mjs` (12 tests): ~63 s on Apple Silicon; node:test runner.
 - `.github/workflows/ci.yml`: unit job (glob) + fixture job (browser-actions/setup-chrome) + integration job.
 - jsqr ^1.4.0 added to engine/tools/package.json. No ffprobe needed (ffmpeg-static suffices).
+
+## CLI (phase 2, engine/tools)
+- `cli.mjs` = command registry; every command returns a result object, `--json` prints it on stdout (logs → stderr) for skills. Exit codes: 0 ok, 1 error, 2 QA failed (`lib/errors.mjs` QaFail), 3 over budget (`BudgetError`). Groups `vo|music|art <sub>` live in `vo.mjs`/`music.mjs`/`art.mjs` (`USAGE` + `commands`). Arg parser `lib/args.mjs`: BOOL set (incl. `png`), MULTI set (`--ref` repeatable).
+- Project commands (`project.mjs`): setup (copies js/, tools/ minus node_modules, index.html, VERSION, assets/fonts, providers.json; writes promo/theme/manifest/.gitignore/.env.example; `npm ci` in tools), check, status, next, cost, stage, gate, mode, budget, output, upgrade (must be run with the PLUGIN's cli + `--project`; wipes js/ and tools/ except node_modules, marks scenes stale).
+- `lib/state.mjs`: stage machine; DEPENDENTS adds `voice → music` (music placement depends on word times) on top of the tech design graph. Stale only propagates to stages that were done. Running > 10 min = failed.
+- Paid calls ONLY via `lib/paid.mjs paid()` (estimate → budget refusal → model fallbacks on policy/ZDR blocks → records actual cost from `usage.cost` or `/generation`, else estimate flagged `estimated`). `providers.json` holds per-model prices (checked 2026-10-11 against openrouter.ai models API; `openai/tts-1-hd` doesn't exist there → fallback is `microsoft/mai-voice-2`). TTS/STT models only show in `/models?output_modalities=all|speech`.
+- Export loudnorm: second pass uses `LRA = max(11, measured+1)` — with a lower LRA target ffmpeg silently switches from linear to dynamic mode and (ffmpeg 6) fails on the channel layout.
+- vo: `vo timing --words <file>` takes your own word times (no STT/API); `timing` always seeds the no-gaps pair, `gaps` always rebuilds from it; `--min` = pauses already this long are left alone, shorter widen to `--max`. Word matching uses the engine's Unicode `wordKey`. Project spoken-form overrides: `theme.json "spoken": { "<regex>": "<canonical>" }`.
+- music: beat-grid phase comb weighs the low-band onset envelope ×2 (mean-normalised) — plain spectral flux locked the fixture grid onto off-beat hi-hats (0.25 s off). The final hit is snapped to the strongest onset within ±0.3 s (button attack), not the grid. Fixture placement now within ~36 ms (test tolerance 0.06 s). `music mix`/`check` use `exportVideo(..., {audioOnly, stems})` which returns `stems` paths.
+- art: names/`--out`/`--name` restricted to `[A-Za-z0-9_-]`, `--ref` image files only (they're uploaded), manifest paths must stay inside the project.

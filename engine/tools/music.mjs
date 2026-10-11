@@ -85,7 +85,7 @@ async function analyseTrack(trackFile) {
   const dur = x.length / SR;
   const A = analyseSignal(x);
   const bpm0 = tempo(A.on, A.nF);
-  const G = beatGrid(A.on, A.nF, bpm0);
+  const G = beatGrid(A.on, A.nF, bpm0, A.low);
   const D = computeDownbeats(G.beats, A.low, A.on);
   const beatTimes = G.beats.map((b) => b.t);
   const H = hits(A.rms, A.on, A.nF, dur, beatTimes, D.downbeats);

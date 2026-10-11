@@ -14,7 +14,10 @@ import { sizeLabel } from '../js/formats.js';
 export async function normalise(wavIn, wavOut) {
   const measure = await ffmpeg(['-hide_banner', '-i', wavIn, '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json', '-f', 'null', '-'], { capture: true });
   const m = JSON.parse(measure.slice(measure.lastIndexOf('{'), measure.lastIndexOf('}') + 1));
-  await ffmpeg(['-y', '-loglevel', 'error', '-i', wavIn, '-af', `loudnorm=I=-14:TP=-1.0:LRA=11:linear=true:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset},aresample=48000`, '-ar', '48000', wavOut]);
+  // linear mode needs a target LRA >= the measured one, else ffmpeg silently falls back to dynamic
+  // compression (and, with ffmpeg 6, fails on the channel layout); keep it pure gain
+  const lra = Math.min(50, Math.max(11, Math.ceil(Number(m.input_lra)) + 1));
+  await ffmpeg(['-y', '-loglevel', 'error', '-i', wavIn, '-af', `loudnorm=I=-14:TP=-1.0:LRA=${lra}:linear=true:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset},aresample=48000`, '-ar', '48000', wavOut]);
   const check = await ffmpeg(['-hide_banner', '-i', wavOut, '-af', 'ebur128=peak=true', '-f', 'null', '-'], { capture: true });
   const sum = check.slice(check.lastIndexOf('Summary'));
   return {

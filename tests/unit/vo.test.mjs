@@ -313,3 +313,21 @@ test('gap insertions: digits and accents match, --min leaves long pauses alone',
   assert.deepEqual(computeGapInsertions(words, b, 1.0, 0.85).map((c) => [c.after, c.added]), [['7', 0.7]]);
   assert.equal(computeGapInsertions(words, b, 1.0, 0).length, 2);
 });
+
+test('vo timing --words: own word times instead of STT (no API), seeds the no-gaps pair', async () => {
+  const { mkdtempSync, cpSync, rmSync, readFileSync, existsSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { commands } = await import('../../engine/tools/vo.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'vo-words-'));
+  const fx = new URL('../../fixtures/sample-15s/', import.meta.url).pathname;
+  for (const f of ['promo.json', 'theme.json', 'script.md', 'assets/vo/vo_nogaps.wav']) cpSync(join(fx, f), join(dir, f === 'assets/vo/vo_nogaps.wav' ? 'assets/vo/vo.wav' : f), { recursive: true });
+  rmSync(join(dir, 'vo'), { recursive: true, force: true });
+  const r = await commands.timing({ project: dir, pos: [], flags: { words: join(fx, 'vo/timing_nogaps.json'), 'vo-start': '0.5' }, log: () => {} });
+  assert.equal(r.words, 21);
+  const t = JSON.parse(readFileSync(join(dir, 'vo/timing.json'), 'utf8'));
+  assert.equal(t.transcriber, 'own word times');
+  assert.equal(t.words[17].w, 'Get');
+  assert.ok(existsSync(join(dir, 'vo/timing_nogaps.json')) && existsSync(join(dir, 'assets/vo/vo_nogaps.wav')));
+  await assert.rejects(commands.timing({ project: dir, pos: [], flags: {}, log: () => {} }), /vo stt|--words/);
+});
