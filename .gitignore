@@ -1,0 +1,8 @@
+node_modules/
+.work/
+.DS_Store
+.env
+promo.bundle.js
+assets/fonts.css
+js/media-data.js
+out/*.mp4
