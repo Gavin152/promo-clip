@@ -23,8 +23,8 @@ jobs:
           - os: ubuntu-latest
             node: '20'   # minimum supported version
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -46,7 +46,7 @@ jobs:
     # differs between Chrome builds, so pixel-diff only runs where the refs were made.
     container: node:22-bookworm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install Chromium
         run: apt-get update -qq && apt-get install -y -qq chromium
       - name: Install tool dependencies
@@ -72,8 +72,8 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm

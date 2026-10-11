@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Renders the fixture's reference stills for THIS OS into fixtures/sample-15s/ref/stills/<platform>/<format>/
 // (lossless PNG, 720p, one per scene). Run after an intended visual change, inspect, commit.
-// Linux refs must come from the CI container (node:22-bookworm + Debian chromium), e.g.:
-//   podman run --rm -v "$PWD":/repo -w /repo node:22-bookworm bash -c \
+// Linux refs must come from the CI container (node:22-bookworm + Debian chromium) on x86-64 — arm64
+// Chromium rasterises slightly differently — e.g. on an Apple Silicon Mac:
+//   podman run --rm --platform linux/amd64 -v "$PWD":/repo -w /repo node:22-bookworm bash -c \
 //     'apt-get update && apt-get install -y chromium && cd engine/tools && npm ci && cd /repo && CHROME_PATH=/usr/bin/chromium node tests/make-refs.mjs'
 import { spawnSync } from 'node:child_process';
 import { join, resolve, dirname } from 'node:path';
