@@ -19,7 +19,7 @@ const BASE_CANON = [
  *
  * Use this for:
  *   - brand names that the STT mis-transcribes:
- *       "sail\\s*tra(x|cks)": "sailtrax"
+ *       "snap\\s*tra(x|cks)": "snaptrax"
  *   - prices/numbers spoken differently than written:
  *       "nineteen ninety|€\\s?19[.,]90": "EUR1990"
  *   - any spoken-form vs written-form ambiguity.
@@ -190,7 +190,7 @@ export function buildSentences(words) {
 /**
  * Capitalise the first letter of a timing word that matches a brand word token.
  * Only exact token matches (punctuation stripped) are affected.
- * For compound brand names (e.g. "SailTrax"), use a theme.json "spoken" override instead.
+ * For compound brand names (e.g. "SnapTrax"), use a theme.json "spoken" override instead.
  */
 export function brandNormalize(word, brandWords) {
   const bare = wordKey(word);
@@ -202,7 +202,7 @@ export function brandNormalize(word, brandWords) {
 
 /**
  * Brand-word "closure" metric: ms of low-energy run in the word's middle 20–75%.
- * A high closure (> ~50 ms) on a word like "SailTrax" suggests the TTS paused
+ * A high closure (> ~50 ms) on a word like "SnapTrax" suggests the TTS paused
  * between the two parts — a quality defect worth penalising in ranking.
  *
  * @param {number[]} env  - RMS envelope in dBFS (10 ms hops)

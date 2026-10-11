@@ -1,6 +1,6 @@
-// Collage props: boat, sun, clouds, phone, polaroids, maps, bubbles, icons, logo.
+// Collage props: sun, clouds, phone, polaroids, maps, bubbles, icons, logo.
 import { W, H, SCALE, TAU, DEG, clamp, hash, hs, rng, prog, ease } from '../../util.js';
-import { S, C, INK, FONT, THEME_DATA, bbAdd, shape, stroke, ell, rrect, resample, quad, bez, partial, sticker, text, circle, torn, tornRectPts, cached, arrow, sparkle } from './draw.js';
+import { S, C, INK, FONT, THEME_DATA, bbAdd, shape, stroke, ell, rrect, resample, quad, bez, partial, sticker, text, measure, circle, torn, tornRectPts, cached, arrow, sparkle } from './draw.js';
 
 export const IMG = {};
 const warned = new Set();
@@ -34,61 +34,6 @@ export function loadImages(list) {
         })
     )
   );
-}
-
-// ---------------- boat ----------------
-/** yacht with waterline at (x,y). o: {s, t, rot, wifi, sticker, flagColor, sailColor} */
-export function boat(ctx, x, y, o = {}) {
-  const s = o.s ?? 1;
-  const t = o.t ?? S.t;
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate((o.rot ?? 0) + Math.sin(t * 1.7 + (o.seed ?? 0)) * 0.025);
-  ctx.scale(s * (o.flip ? -1 : 1), s);
-  const draw = (c) => boatBody(c, o, t);
-  if (o.sticker === false) draw(ctx);
-  else sticker(ctx, draw, { border: 10 / s + 1, shadow: o.shadow ?? 1 });
-  ctx.restore();
-}
-function boatBody(ctx, o, t) {
-  // sails first (behind hull top)
-  const mastX = -10;
-  stroke(ctx, [[mastX, -58], [mastX, -470]], INK, 7, { amp: 0.8 });
-  const main = [[mastX + 4, -458], ...quad([mastX + 4, -458], [-150, -262], [-228, -122], 14).slice(1), [mastX + 4, -126]];
-  shape(ctx, resample(main, 18, true), { fill: o.sailColor ?? '#FFFDF4', lw: 5, hatch: '#9ED8EE' });
-  const jib = [[mastX + 12, -440], [276, -80], ...quad([276, -80], [150, -96], [34, -98], 8).slice(1)];
-  shape(ctx, resample(jib, 18, true), { fill: '#FFFFFF', lw: 5, hatch: '#9ED8EE' });
-  if (S.pass !== 'back') {
-    ctx.strokeStyle = 'rgba(27,31,42,0.35)';
-    ctx.lineWidth = 2.5;
-    for (let i = 1; i < 4; i++) {
-      ctx.beginPath();
-      ctx.moveTo(mastX + 4, -126 - i * 80);
-      ctx.lineTo(-40 - i * 30 - 150 + i * 60, -126 - i * 60);
-      ctx.stroke();
-    }
-  }
-  if (o.wifi && S.pass !== 'back') wifiIcon(ctx, -95, -250, 0.75, o.wifi, C.cyanDeep);
-  stroke(ctx, [[mastX, -124], [-232, -116]], INK, 6);
-  // flag
-  const fw = Math.sin(t * 8) * 6;
-  shape(ctx, resample([[mastX, -470], [mastX + 52, -462 + fw], [mastX, -448]], 10, true), { fill: o.flagColor ?? C.cyan, lw: 4 });
-  // cabin
-  shape(ctx, rrect(-160, -100, 190, 52, 14), { fill: '#FFFFFF', lw: 5 });
-  if (S.pass !== 'back') {
-    ctx.fillStyle = C.navy2;
-    for (const wx of [-140, -92, -44]) ctx.fillRect(wx, -86, 34, 16);
-  }
-  // hull
-  const hull = resample([[-266, -54], [292, -76], [248, -22], [198, 8], [-212, 10], [-254, -14]], 18, true);
-  shape(ctx, hull, { fill: '#FFFFFF', lw: 6 });
-  shape(ctx, resample([[-262, -42], [283, -64], [272, -50], [-258, -28]], 18, true), { fill: C.navy2, lw: 0, stroke: null, noBack: true });
-  shape(ctx, resample([[-226, -2], [214, -3], [206, 5], [-216, 7]], 18, true), { fill: C.cyan, lw: 0, stroke: null, noBack: true });
-  if (S.pass !== 'back') {
-    for (const px of [60, 120, 180]) shape(ctx, ell(px, -26, 9, 8), { fill: C.sky2, lw: 3, double: false });
-  }
-  // rail
-  stroke(ctx, [[-250, -58], [-250, -84], [240, -104], [270, -80]], INK, 3, { double: false });
 }
 
 // ---------------- sky bits ----------------
@@ -294,8 +239,8 @@ export function route(ctx, pts, p, color = C.red, lw = 6, dash = [4, 14]) {
   ctx.restore();
   return pp[pp.length - 1];
 }
-/** small boat marker (top-down arrow) */
-export function boatPin(ctx, x, y, ang, color, s = 1, label) {
+/** small map marker (top-down arrow pointing along `ang`), optional label above */
+export function mapArrow(ctx, x, y, ang, color, s = 1, label) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(ang);
@@ -344,7 +289,7 @@ export function bubble(ctx, x, y, w, h, tail, str, o = {}) {
 }
 
 // ---------------- icons ----------------
-export function wifiIcon(ctx, x, y, s = 1, p = 1, color = C.cyan, off = 'rgba(27,31,42,0.25)') {
+export function wifiIcon(ctx, x, y, s = 1, p = 1, color = C.accent, off = 'rgba(27,31,42,0.25)') {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
@@ -370,11 +315,12 @@ export function stopwatch(ctx, x, y, r, frac, o = {}) {
   ctx.save();
   ctx.translate(x, y);
   sticker(ctx, (c) => {
-    shape(c, rrect(-r * 0.18, -r * 1.32, r * 0.36, r * 0.26, 6), { fill: C.cyanDeep, lw: 4 });
+    shape(c, rrect(-r * 0.18, -r * 1.32, r * 0.36, r * 0.26, 6), { fill: C.accentDeep, lw: 4 });
     shape(c, ell(0, 0, r, r), { fill: '#fff', lw: 6 });
     if (S.pass === 'back') return;
     c.save();
-    c.fillStyle = 'rgba(1,215,252,0.35)';
+    c.fillStyle = C.accent;
+    c.globalAlpha *= 0.35;
     c.beginPath();
     c.moveTo(0, 0);
     c.arc(0, 0, r * 0.86, -Math.PI / 2, -Math.PI / 2 + frac * TAU);
@@ -388,7 +334,7 @@ export function stopwatch(ctx, x, y, r, frac, o = {}) {
     const a = -Math.PI / 2 + frac * TAU;
     stroke(c, [[0, 0], [Math.cos(a) * r * 0.72, Math.sin(a) * r * 0.72]], C.red, 6, { double: false, amp: 0.5 });
     circle(c, 0, 0, 7, { fill: INK, lw: 2 });
-    if (o.label) text(c, o.label, 0, r * 0.38, { font: 'orb', weight: 700, size: r * 0.3, color: INK, wobble: 0 });
+    if (o.label) text(c, o.label, 0, r * 0.38, { font: 'display', weight: 700, size: r * 0.3, color: INK, wobble: 0 });
   }, { shadow: 0.9 });
   ctx.restore();
 }
@@ -409,7 +355,7 @@ export function keypad(ctx, x, y, s) {
   shape(ctx, rrect(-58, -58, 116, 116, 14), { fill: '#D6E4F0', lw: 5 });
   if (S.pass !== 'back') {
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) circle(ctx, -32 + i * 32, -32 + j * 32, 10, { fill: '#fff', lw: 3, double: false });
-    text(ctx, '****', 0, 0, { font: 'orb', weight: 900, size: 26, color: C.red, wobble: 0 });
+    text(ctx, '****', 0, 0, { font: 'display', weight: 900, size: 26, color: C.red, wobble: 0 });
   }
   ctx.restore();
 }
@@ -442,40 +388,27 @@ export function trophy(ctx, x, y, s) {
   }, { shadow: 0.9 });
   ctx.restore();
 }
-/** steering wheel + two-value instrument display. vals = [left, right]; o.labels, o.units */
-export function helmDisplay(ctx, x, y, s, vals, o = {}) {
+/** two-value dashboard panel (dark screen sticker). vals = [left, right]; o.labels, o.units, o.colors */
+export function statsPanel(ctx, x, y, s, vals, o = {}) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(s, s);
-  const t = o.t ?? S.t;
   sticker(ctx, (c) => {
-    // steering wheel
-    c.save();
-    c.translate(0, 120);
-    c.rotate(Math.sin(t * 0.8) * 0.12);
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * TAU;
-      stroke(c, [[Math.cos(a) * 40, Math.sin(a) * 40], [Math.cos(a) * 250, Math.sin(a) * 250]], '#9AA3AD', 12);
-      if (S.pass !== 'back') stroke(c, [[Math.cos(a) * 250, Math.sin(a) * 250], [Math.cos(a) * 290, Math.sin(a) * 290]], C.woodDark, 16);
-    }
-    stroke(c, ell(0, 0, 250, 250), '#C3CAD2', 22, { closed: true });
-    circle(c, 0, 0, 44, { fill: '#9AA3AD', lw: 6 });
-    c.restore();
-    // display
     shape(c, rrect(-230, -170, 460, 250, 30), { fill: '#0B1220', lw: 8, amp: 1.2 });
     if (S.pass === 'back') return;
     c.fillStyle = '#131C2E';
     c.beginPath();
     c.roundRect(-205, -148, 410, 206, 16);
     c.fill();
-    const [l0, l1] = o.labels ?? ['SOG', 'TWS'];
-    const [u0, u1] = o.units ?? ['kn', 'kn'];
-    text(c, l0, -110, -118, { font: 'orb', weight: 700, size: 22, color: '#7F8AA3', wobble: 0 });
-    text(c, l1, 110, -118, { font: 'orb', weight: 700, size: 22, color: '#7F8AA3', wobble: 0 });
-    text(c, vals[0], -110, -50, { font: 'orb', weight: 700, size: 74, color: C.cyan, wobble: 0 });
-    text(c, vals[1], 110, -50, { font: 'orb', weight: 700, size: 74, color: C.lime, wobble: 0 });
-    text(c, u0, -110, 8, { font: 'orb', weight: 500, size: 22, color: '#7F8AA3', wobble: 0 });
-    text(c, u1, 110, 8, { font: 'orb', weight: 500, size: 22, color: '#7F8AA3', wobble: 0 });
+    const [l0, l1] = o.labels ?? ['', ''];
+    const [u0, u1] = o.units ?? ['', ''];
+    const [c0, c1] = o.colors ?? [C.accent, C.lime];
+    text(c, l0, -110, -118, { font: 'display', weight: 700, size: 22, color: '#7F8AA3', wobble: 0 });
+    text(c, l1, 110, -118, { font: 'display', weight: 700, size: 22, color: '#7F8AA3', wobble: 0 });
+    text(c, vals[0], -110, -50, { font: 'display', weight: 700, size: 74, color: c0, wobble: 0 });
+    text(c, vals[1], 110, -50, { font: 'display', weight: 700, size: 74, color: c1, wobble: 0 });
+    text(c, u0, -110, 8, { font: 'display', weight: 500, size: 22, color: '#7F8AA3', wobble: 0 });
+    text(c, u1, 110, 8, { font: 'display', weight: 500, size: 22, color: '#7F8AA3', wobble: 0 });
     stroke(c, [[0, -140], [0, 40]], '#2A3550', 3, { double: false });
   }, { shadow: 1 });
   ctx.restore();
@@ -564,9 +497,9 @@ export function frame(ctx, x, y, w, h, fn) {
 // ---------------- badges / brand ----------------
 /**
  * Brand logo centred at (x,y), from theme.logo:
- *   { type: 'text', text, accent?, color? }  -> layered display text (shadow, accent offset, face)
+ *   { type: 'text', text, color?, font?, weight? } -> paper cut-out sticker of the name (display font, ink)
  *   { type: 'image', image: <manifest key> } -> the image, `size` = its height
- * o: {p (0..1 type-on reveal for text), accent, color}. Returns the drawn width.
+ * o: {p (0..1 type-on reveal for text), color}. Returns the drawn width.
  */
 export function logo(ctx, x, y, size, o = {}) {
   const L = THEME_DATA.logo ?? { type: 'text', text: THEME_DATA.name ?? 'Logo' };
@@ -581,19 +514,11 @@ export function logo(ctx, x, y, size, o = {}) {
     ctx.restore();
     return w;
   }
-  ctx.font = `700 ${size}px ${FONT[L.font ?? 'orb'] ?? L.font}`;
-  ctx.textBaseline = 'middle';
   const str = L.text ?? THEME_DATA.name ?? 'Logo';
-  const shown = str.slice(0, Math.ceil(str.length * p));
-  const full = ctx.measureText(str).width;
-  ctx.textAlign = 'left';
-  const x0 = -full / 2;
-  ctx.fillStyle = L.shadow ?? '#888888';
-  ctx.fillText(shown, x0 - size * 0.05, -size * 0.025);
-  ctx.fillStyle = o.accent ?? L.accent ?? C.cyan;
-  ctx.fillText(shown, x0 + size * 0.075, 0);
-  ctx.fillStyle = o.color ?? L.color ?? '#FFFFFF';
-  ctx.fillText(shown, x0, 0);
+  const to = { font: L.font ?? 'display', weight: L.weight ?? 900, size, color: o.color ?? L.color ?? C.ink, wobble: 0.25 };
+  const full = measure(ctx, str, to);
+  // paper cut-out: the letters' white die-cut border + soft drop shadow come from sticker()
+  sticker(ctx, (c) => text(c, str, 0, 0, { ...to, reveal: p }), { shadow: 1, border: Math.max(8, size * 0.09) });
   ctx.restore();
   return full;
 }
@@ -604,9 +529,9 @@ export function premiumBadge(ctx, x, y, s, o = {}) {
   ctx.rotate(o.rot ?? -0.05);
   ctx.scale(s, s);
   sticker(ctx, (c) => {
-    shape(c, rrect(-190, -52, 380, 104, 52), { fill: C.cyan, lw: 6 });
+    shape(c, rrect(-190, -52, 380, 104, 52), { fill: C.accent, lw: 6 });
     if (S.pass === 'back') return;
-    text(c, o.label ?? 'PREMIUM', 18, 2, { font: 'orb', weight: 900, size: 46, color: C.navy, wobble: 0.3, spacing: 3 });
+    text(c, o.label ?? 'PREMIUM', 18, 2, { font: 'display', weight: 900, size: 46, color: C.navy, wobble: 0.3, spacing: 3 });
     sparkle(c, -142, 0, 26, C.yellow, S.t * 0.8);
   }, { shadow: 1 });
   ctx.restore();
@@ -621,14 +546,14 @@ export function priceTag(ctx, x, y, s, o = {}) {
     shape(c, resample([[-150, -60], [130, -60], [175, 0], [130, 60], [-150, 60]], 16, true), { fill: '#FFF3C4', lw: 6 });
     circle(c, 130, 0, 12, { fill: '#fff', lw: 4 });
     if (S.pass === 'back') return;
-    text(c, o.price ?? THEME_DATA.constants?.price ?? '', -18, -12, { font: 'orb', weight: 900, size: 50, color: C.navy, wobble: 0.2 });
+    text(c, o.price ?? THEME_DATA.constants?.price ?? '', -18, -12, { font: 'display', weight: 900, size: 50, color: C.navy, wobble: 0.2 });
     text(c, o.label ?? THEME_DATA.constants?.priceLabel ?? '', -18, 32, { font: 'hand', size: 34, color: '#444' });
   }, { shadow: 1 });
   ctx.restore();
 }
 /** rubber stamp (cached offscreen with grunge) */
 export function stamp(ctx, x, y, str, o = {}) {
-  const color = o.color ?? C.cyanDeep;
+  const color = o.color ?? C.accentDeep;
   const fs = o.size ?? 90;
   const key = `stamp:${str}:${color}:${fs}`;
   const img = cached(key, fs * str.length * 0.8 + 140, fs * 1.9, (c, cv) => {
@@ -643,7 +568,7 @@ export function stamp(ctx, x, y, str, o = {}) {
     c.beginPath();
     c.roundRect(32, 32, w - 64, h - 64, 14);
     c.stroke();
-    c.font = `900 ${fs}px ${FONT.orb}`;
+    c.font = `900 ${fs}px ${FONT.display}`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
     c.fillText(str, w / 2, h / 2 + 4);
@@ -682,7 +607,7 @@ export function stamp(ctx, x, y, str, o = {}) {
 /** paper confetti burst; tau = seconds since burst */
 export function confetti(ctx, x, y, tau, n = 60, seed = 3, spread = 1) {
   if (tau < 0 || tau > 3.5) return;
-  const cols = [C.cyan, C.lime, C.coral, C.yellow, '#fff', C.teal];
+  const cols = [C.accent, C.lime, C.coral, C.yellow, '#fff', C.teal];
   const r = rng(seed);
   for (let i = 0; i < n; i++) {
     const a = -Math.PI / 2 + (r() - 0.5) * 2.6 * spread;

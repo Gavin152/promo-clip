@@ -186,12 +186,12 @@ await sharp(svg(1600, 1000, `
 // app screenshot placeholder (portrait phone screen)
 await sharp(svg(590, 1280, `
   <rect width="590" height="1280" fill="#111827"/>
-  <rect x="40" y="120" width="510" height="90" rx="20" fill="#1F2937"/><rect x="70" y="150" width="240" height="30" rx="8" fill="#01D7FC"/>
+  <rect x="40" y="120" width="510" height="90" rx="20" fill="#1F2937"/><rect x="70" y="150" width="240" height="30" rx="8" fill="#FF8A3D"/>
   <rect x="40" y="250" width="510" height="420" rx="28" fill="#1F2937"/>
   <path d="M80 600 L170 500 L250 540 L340 400 L420 450 L510 300" fill="none" stroke="#C8F56A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
   <g fill="#1F2937"><rect x="40" y="710" width="245" height="200" rx="24"/><rect x="305" y="710" width="245" height="200" rx="24"/></g>
-  <rect x="70" y="760" width="120" height="60" rx="10" fill="#01D7FC"/><rect x="335" y="760" width="150" height="60" rx="10" fill="#FF6B6B"/>
-  <rect x="140" y="1080" width="310" height="96" rx="48" fill="#01D7FC"/>`)).png().toFile(out('assets/img/screen.png'));
+  <rect x="70" y="760" width="120" height="60" rx="10" fill="#FF8A3D"/><rect x="335" y="760" width="150" height="60" rx="10" fill="#FF6B6B"/>
+  <rect x="140" y="1080" width="310" height="96" rx="48" fill="#FF8A3D"/>`)).png().toFile(out('assets/img/screen.png'));
 writeFileSync(out('assets/img/qr.svg'), await QRCode.toString('https://example.com', { type: 'svg', margin: 2, color: { dark: '#111827', light: '#FFFFFF' } }));
 
 console.log(`fixture written: vo ${vo.duration}s (${vo.words.length} words), music offset ${offset}s, final hit at film ${cues.film.final}s`);

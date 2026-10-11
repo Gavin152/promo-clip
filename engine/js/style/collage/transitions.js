@@ -1,7 +1,7 @@
 // Cut transitions, drawn over the scenes. A video declares them in timeline.js:
 //   export const TRANSITIONS = [
 //     { t: T.s2, type: 'swipe', color: 'navy2', dir: 1 },           // torn-paper sheet wipes across the cut
-//     { t: T.s3, type: 'iris', color: 'cyan', x: 960, y: 560 },     // paper ring bursts open
+//     { t: T.s3, type: 'iris', color: 'accent', x: 960, y: 560 },     // paper ring bursts open
 //     { t: T.end, type: 'flash' },                                  // white flash (e.g. on a camera shutter)
 //     { type: 'eyelids', close: T.blink, shut: T.blinkEnd, open: T.s2 }, // eyes close and open on the cut
 //   ];
@@ -11,7 +11,7 @@ import { DURATION } from '../../data.js';
 import { S, C, INK, shape, stroke, torn, tornRectPts, col } from './draw.js';
 
 export const SWIPE_HALF = 0.32;
-const SWIPE_COLORS = ['navy2', '#FFD27A', 'cyan', 'teal'];
+const SWIPE_COLORS = ['navy2', '#FFD27A', 'accent', 'teal'];
 
 function swipe(ctx, t, sw, i) {
   const u = (t - sw.t) / SWIPE_HALF;

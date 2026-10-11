@@ -89,7 +89,7 @@ unit tests and a setup check on Linux, macOS and Windows, and the full render pi
 
 ## Licence
 
-Code: [MIT](LICENSE). Bundled fonts keep their own licences: Orbitron, Inter and Caveat under the
+Code: [MIT](LICENSE). Bundled fonts keep their own licences: Inter and Caveat under the
 SIL Open Font License 1.1, Permanent Marker under the Apache License 2.0 (see
 [`engine/assets/fonts/`](engine/assets/fonts/README.md)). `ffmpeg-static` downloads an ffmpeg build under its own licence (GPL) at
 install time; it is not part of this repository.

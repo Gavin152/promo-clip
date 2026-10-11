@@ -4,7 +4,8 @@ import { DEG, TAU, hash } from '../../util.js';
 import { S, C, INK, THEME_DATA, col, shape, stroke, ell, resample, sticker } from './draw.js';
 
 export const LOOKS = {
-  skipper: { hat: 'cap', shirt: 'palm', shirtColor: 'charcoal', bottom: 'shorts', bottomColor: 'teal' },
+  casual: { hair: 'messy', hairColor: '#4A3426', shirtColor: 'teal', bottom: 'pants', bottomColor: 'navy' },
+  cap: { hat: 'cap', shirtColor: 'coral', bottom: 'shorts', bottomColor: 'charcoal' },
   blonde: { hair: 'pony', hairColor: '#F2C94C', shirtColor: '#FF7A6B', bottom: 'pants', bottomColor: '#5B7DB1' },
   brown: { hair: 'messy', hairColor: '#7A4A2A', shirtColor: '#8EC5E8', bottom: 'shorts', bottomColor: '#C9A46A' },
   mom: { hair: 'long', hairColor: '#8B4A2B', shirtColor: '#E8574F', bottom: 'pants', bottomColor: '#5B7DB1' },
@@ -47,7 +48,7 @@ export function person(ctx, x, y, o = {}) {
 }
 
 function body(ctx, o) {
-  const L = resolveLook(typeof o.look === 'string' ? LOOKS[o.look] ?? LOOKS.skipper : o.look || LOOKS.skipper);
+  const L = resolveLook(typeof o.look === 'string' ? LOOKS[o.look] ?? LOOKS.casual : o.look || LOOKS.casual);
   const t = o.t ?? S.t;
   const seed = o.seed ?? 1;
   const fs = (o.face ?? 0.3) >= 0 ? 1 : -1;
@@ -266,7 +267,7 @@ function phoneInHand(ctx, hd, o) {
   ctx.rotate(o.phoneRot ?? 0.08);
   shape(ctx, resample([[-20, -36], [20, -36], [20, 36], [-20, 36]], 10, true), { fill: '#1d2230', lw: 4.5, amp: 0.8 });
   if (S.pass !== 'back') {
-    ctx.fillStyle = o.phoneScreen ?? C.cyan;
+    ctx.fillStyle = o.phoneScreen ?? C.accent;
     ctx.globalAlpha *= 0.9;
     ctx.fillRect(-14, -28, 28, 54);
     ctx.globalAlpha = 1;

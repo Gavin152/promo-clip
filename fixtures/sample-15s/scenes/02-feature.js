@@ -1,6 +1,6 @@
 // 02 feature: "Try the feature. Tap once, and it just works."
 import { prog, ease, pop, pick } from '@engine/util.js';
-import { C, gridPaper, phone, dataTag, checkMark, caption, circle, rise, beatPulse } from '@engine/style/collage/index.js';
+import { C, alpha, gridPaper, phone, dataTag, checkMark, caption, circle, rise, beatPulse } from '@engine/style/collage/index.js';
 import THEME from '@project/theme.json';
 import T from '@project/timeline.js';
 
@@ -21,7 +21,7 @@ export default {
     { t: T.works + 0.05, kind: 'arp', notes: [79, 83, 86, 91], gap: 0.07, vel: 0.1 },
   ],
   draw(ctx, lt, t, L) {
-    gridPaper(ctx, C.cream, 'rgba(1,215,252,0.18)', 54);
+    gridPaper(ctx, C.cream, alpha('accent', 0.18), 54);
     const [px, py, ph] = L.phone;
     const up = rise(t, T.phone - 0.15, 0.5);
     const tapK = Math.exp(-Math.max(0, t - T.tap) * 5) * (t >= T.tap ? 1 : 0);
@@ -41,7 +41,7 @@ export default {
     const tags = THEME.constants?.tags ?? [];
     L.tags.forEach(([x, y], i) => {
       const tg = tags[i];
-      if (tg) dataTag(ctx, x, y, tg[0], tg[1], tg[2], pop(t, T.tags + i * 0.25, 0.45) * (1 + beatPulse(t) * 0.03), i ? 0.05 : -0.04, i ? C.coral : C.cyan);
+      if (tg) dataTag(ctx, x, y, tg[0], tg[1], tg[2], pop(t, T.tags + i * 0.25, 0.45) * (1 + beatPulse(t) * 0.03), i ? 0.05 : -0.04, i ? C.coral : C.accent);
     });
     const [cx, cy, cs] = L.check;
     if (t > T.works - 0.1) {

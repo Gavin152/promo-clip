@@ -54,7 +54,7 @@
     },
     "gotchas": [
       "Ask for the subject on solid #FF00FF for the chroma key",
-      "Edits can't restructure geometry (e.g. change a sail type); regenerate from text instead",
+      "Edits can't restructure geometry (e.g. change a car body); regenerate from text instead",
       "Adds stray ground lines under subjects; erase them on the raw image before processing"
     ]
   },

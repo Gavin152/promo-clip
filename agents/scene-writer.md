@@ -12,7 +12,7 @@ You own exactly one scene file, `V/scenes/<SCENE>.js`, in the video folder `V`. 
 
 The dispatcher gives you:
 
-- `PLUGIN` (the promo-clip plugin folder), `V` (the video folder), `SCENE` (e.g. `03-helm`), `MODE`: `write`, `adapt` or `fix` — all absolute paths.
+- `PLUGIN` (the promo-clip plugin folder), `V` (the video folder), `SCENE` (e.g. `03-dashboard`), `MODE`: `write`, `adapt` or `fix` — all absolute paths.
 - **write**: the scene's spoken lines and picture idea from `script.md`, the timeline events it should use, the art keys available, the primary format.
 - **adapt**: the formats to add.
 - **fix**: the reviewer's requests for this scene.

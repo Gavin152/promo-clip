@@ -30,7 +30,7 @@ export default {
 };
 ```
 
-- The id is the file name (`scenes/03-helm.js` → `03-helm`); file-name order is film order.
+- The id is the file name (`scenes/03-dashboard.js` → `03-dashboard`); file-name order is film order.
 - **Every position and size lives in `layout`** as numbers or small arrays; `draw` reads `L.*`. A missing format falls back to another layout with a warning (that is what the formats stage fills in).
 - Everything is a pure function of `t`: the same `t` must draw the same frame. Randomness comes from `hash(…)`, `hs(…)` or `rng(seed)`, never `Math.random`.
 - `ctx` is already in design units for the current format (`W` x `H` from `@engine/util.js`); scale and crop to the output size happen outside the scene.
@@ -52,7 +52,7 @@ export default {
 ## Collage style (`@engine/style/collage/index.js`)
 
 **Text and titles**
-- `text(ctx, str, x, y, {font:'hand'|'marker'|'orb'|'inter', size, color, align, weight, reveal, wobble, stroke, strokeW, spacing})` — hand-wobbled letters; `reveal` 0..1 types it on.
+- `text(ctx, str, x, y, {font:'hand'|'marker'|'display'|'inter', size, color, align, weight, reveal, wobble, stroke, strokeW, spacing})` — hand-wobbled letters; `reveal` 0..1 types it on.
 - `caption(ctx, str, x, y, t, t0, {size, font, hl, color, rot, align, scale})` — sticker caption written on from t0; `hl` = marker highlight colour.
 - `slam(ctx, str, x, y, t, t0, {size, hl, color, rot})` — title that slams in at t0.
 - `highlight`, `underline`, `arrow`, `sparkle`, `measure(ctx, str, o)`.
@@ -69,9 +69,9 @@ export default {
 - `phone(ctx, cx, cy, h, screenKeyOrFn, {rot, overlay(c, sx, sy, sw, sh)})`, `polaroid(ctx, x, y, w, contentFn(c, w, h), caption, {rot, key})`, `laptop`, `frame`.
 - `logo(ctx, x, y, size, {p})` — the theme logo (text or image), `p` types it on.
 
-**Props drawn in code** — `sun(ctx, x, y, r, {shades})`, `moon`, `cloud(ctx, x, y, s)`, `gull`, `boat`, `island`, `compass`, `route`, `boatPin`, `bubble(ctx, x, y, w, h, [tailDx, tailDy], str)`, `wifiIcon`, `checkMark(ctx, x, y, s, p)`, `xMark`, `stopwatch`, `creditCard`, `keypad`, `gear`, `trophy`, `padlock`, `chain`, `couch`, `helmDisplay(ctx, x, y, s, vals, {labels, units})`, `premiumBadge(ctx, x, y, s, {label})`, `priceTag(ctx, x, y, s, {price, label})`, `stamp(ctx, x, y, str, {p, color, size, rot})`, `confetti(ctx, x, y, t - t0, n, seed)`.
+**Props drawn in code** — `sun(ctx, x, y, r, {shades})`, `moon`, `cloud(ctx, x, y, s)`, `gull`, `island`, `compass`, `route`, `mapArrow(ctx, x, y, ang, color, s, label)`, `bubble(ctx, x, y, w, h, [tailDx, tailDy], str)`, `wifiIcon`, `checkMark(ctx, x, y, s, p)`, `xMark`, `stopwatch`, `creditCard`, `keypad`, `gear`, `trophy`, `padlock`, `chain`, `couch`, `statsPanel(ctx, x, y, s, vals, {labels, units, colors})`, `premiumBadge(ctx, x, y, s, {label})`, `priceTag(ctx, x, y, s, {price, label})`, `stamp(ctx, x, y, str, {p, color, size, rot})`, `confetti(ctx, x, y, t - t0, n, seed)`.
 
-**People** — `person(ctx, x, y, {look, s, ...POSE.cheer, mouth, eyes, brow, face, walk, sit, flip, phone:'L'|'R'})` stick figures with feet at (x, y). `LOOKS` (skipper, blonde, brown, mom, kid1, kid2, grandpa + theme `characters`), `POSE` (idle, hips, shrug, cheer, phoneR, phoneL, point, thumbs), `wave(t)` for a waving arm.
+**People** — `person(ctx, x, y, {look, s, ...POSE.cheer, mouth, eyes, brow, face, walk, sit, flip, phone:'L'|'R'})` stick figures with feet at (x, y). `LOOKS` (casual (default), cap, blonde, brown, mom, kid1, kid2, grandpa + theme `characters`), `POSE` (idle, hips, shrug, cheer, phoneR, phoneL, point, thumbs), `wave(t)` for a waving arm.
 
 **Scene helpers** — `fill(ctx, color)`, `gridPaper(ctx, bg, line, step)`, `corkBoard`, `sunburst(ctx, x, y, t, a, color)`, `glow(ctx, x, y, r, color, a)`, `doodleStars`, `waveDoodles`, `camera(ctx, lt, dur, zoom)` (handheld drift + push-in), `applyShake(ctx, t, t0, dur, amp)`, `popIn(ctx, x, y, k, fn, rot)`, `rise(t, t0)`, `beatPulse(t)`, `breathe(t, seed)`, `dataTag(ctx, x, y, label, value, unit, k, rot, color)`, `pin`, `alpha(color, a)`, `mixColor(a, b, k)`.
 
@@ -86,7 +86,7 @@ export default {
 ```js
 export const TRANSITIONS = [
   { t: T.s2, type: 'swipe', color: 'navy2', dir: 1 },          // torn sheet across the cut
-  { t: T.s5, type: 'iris', color: 'cyan', x: 960, y: 560 },    // paper ring bursts open
+  { t: T.s5, type: 'iris', color: 'accent', x: 960, y: 560 },    // paper ring bursts open
   { t: T.final, type: 'flash' },                               // white flash
   { type: 'eyelids', close: T.blink, shut: T.blinkEnd, open: T.s2 },
 ];

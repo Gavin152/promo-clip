@@ -5,7 +5,7 @@ import { BEATS } from '../../data.js';
 import { S, C, INK, shape, ell, rrect, sticker, text, measure, torn, tornRectPts, highlight } from './draw.js';
 import { image } from './props.js';
 
-/** '#01D7FC' (or a palette key) + alpha -> 'rgba(1,215,252,a)' */
+/** '#FF8A3D' (or a palette key) + alpha -> 'rgba(255,138,61,a)' */
 export function alpha(color, a) {
   const c = C[color] ?? color;
   if (!/^#[0-9a-f]{6}$/i.test(c)) return c;
@@ -110,7 +110,7 @@ export function gridPaper(ctx, bg, line, step = 48) {
   ctx.restore();
 }
 /** twinkling doodle crosses scattered over the frame */
-export function doodleStars(ctx, t, n = 26, seed = 9, color = alpha('cyan', 0.35)) {
+export function doodleStars(ctx, t, n = 26, seed = 9, color = alpha('accent', 0.35)) {
   const r = rng(seed);
   ctx.save();
   ctx.strokeStyle = color;
@@ -146,7 +146,7 @@ export function waveDoodles(ctx, t, color = 'rgba(255,255,255,0.35)', n = 14, se
   ctx.restore();
 }
 /** soft radial glow */
-export function glow(ctx, x, y, r, color = 'cyan', a = 0.28) {
+export function glow(ctx, x, y, r, color = 'accent', a = 0.28) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, r);
   g.addColorStop(0, alpha(color, a));
   g.addColorStop(1, alpha(color, 0));
@@ -154,7 +154,7 @@ export function glow(ctx, x, y, r, color = 'cyan', a = 0.28) {
   ctx.fillRect(x - r, y - r, r * 2, r * 2);
 }
 /** rotating sunburst rays (reveal backgrounds) */
-export function sunburst(ctx, x, y, t, a = 1, color = 'cyan') {
+export function sunburst(ctx, x, y, t, a = 1, color = 'accent') {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(t * 0.12);
@@ -170,15 +170,15 @@ export function sunburst(ctx, x, y, t, a = 1, color = 'cyan') {
   ctx.restore();
 }
 /** dark data card: LABEL / big value + unit, popped in by k */
-export function dataTag(ctx, x, y, label, value, unit, k, rot = 0, color = C.cyan) {
+export function dataTag(ctx, x, y, label, value, unit, k, rot = 0, color = C.accent) {
   popIn(ctx, x, y, k, (c) => {
     sticker(c, (cc) => {
       shape(cc, rrect(-150, -78, 300, 156, 22), { fill: C.navy, lw: 6 });
       if (S.pass === 'back') return;
-      text(cc, label, 0, -44, { font: 'orb', weight: 700, size: 22, color: '#8FA0BC', spacing: 3, wobble: 0.3 });
-      const vw = measure(cc, value, { font: 'orb', size: 64, weight: 700 });
-      text(cc, value, unit ? -26 : 0, 14, { font: 'orb', weight: 700, size: 64, color, wobble: 0.3 });
-      if (unit) text(cc, unit, vw / 2 - 12, 26, { font: 'orb', weight: 500, size: 26, color: '#8FA0BC', align: 'left', wobble: 0.3 });
+      text(cc, label, 0, -44, { font: 'display', weight: 700, size: 22, color: '#8FA0BC', spacing: 3, wobble: 0.3 });
+      const vw = measure(cc, value, { font: 'display', size: 64, weight: 700 });
+      text(cc, value, unit ? -26 : 0, 14, { font: 'display', weight: 700, size: 64, color, wobble: 0.3 });
+      if (unit) text(cc, unit, vw / 2 - 12, 26, { font: 'display', weight: 500, size: 26, color: '#8FA0BC', align: 'left', wobble: 0.3 });
     }, { border: 9 });
   }, rot);
 }

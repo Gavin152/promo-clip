@@ -12,7 +12,7 @@
 //
 // Tolerance decision:
 //   JPEG reference stills (quality 0.85) introduce ~3-5 levels of re-encoding noise.
-//   GPU text rasterisation varies by ≤ 8/255 between runs (confirmed in promo02).
+//   GPU text rasterisation varies by ≤ 8/255 between runs.
 //   Default tolerance 8/255 covers both. PNG references are also supported (0 re-encoding noise;
 //   still allow 8/255 for GPU raster noise). Use --tol 0 only for known-identical renders.
 import { readdirSync, mkdirSync, existsSync } from 'node:fs';

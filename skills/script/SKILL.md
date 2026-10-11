@@ -20,11 +20,11 @@ The format is parsed by the CLI — keep it exact:
 # Script: <title>
 
 ## 01-hook
-> [excited, warm] Charter week! Seven days of sun and sea, gone in a blink.
-Picture: a calendar of seven days pops up over a sunny harbour, then the pages blow away.
+> [excited, warm] Monday morning! Fifty unread messages, and the coffee isn't even ready.
+Picture: a desk piled with paper notes; message bubbles pop up one after another around a sleepy figure.
 
 ## 02-problem
-> You come home with three hundred photos and only a rough idea of where you sailed.
+> By lunch you've lost track of who asked you what.
 Picture: …
 ```
 

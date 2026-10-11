@@ -1,6 +1,5 @@
 // Pure DSP for music analysis: onset detection, BPM, beat grid, downbeats, hits, bar profile.
 // No ffmpeg / no file I/O — importable in unit tests without any native deps.
-// Ported from promo02/tools/music-cues.mjs, stripped of all SailTrax-specific content.
 
 export const SR = 22050; // analysis sample rate
 export const N = 2048; // FFT size

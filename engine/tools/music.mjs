@@ -1,6 +1,5 @@
 // music sub-commands: generate, cues, import (alias: swap), mix, check.
-// Ported from promo02/tools/music-{generate,cues,swap}.mjs + mix-{tune,check}.mjs.
-// SailTrax-specific hardcoding removed; story beats come from vo/timing.json + script.md.
+// No project-specific hardcoding: story beats come from vo/timing.json + script.md.
 import { readFileSync, writeFileSync, existsSync, copyFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join, extname, basename, resolve } from 'node:path';
 import { decode, loudness as ffmpegLoudness } from './lib/audio.mjs';

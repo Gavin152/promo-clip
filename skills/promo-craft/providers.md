@@ -13,7 +13,7 @@ Gemini 3.8 Flash TTS and Gemini 3.1 Flash TTS are auditioned **together** — ne
 
 ## STT (word timing)
 
-AssemblyAI Universal 3.5 Pro (fallback Whisper large v3). WAV only — the CLI converts. Brand names come back joined or split ("PromoClip", "Sail Tracks"); QA treats 2–3-word compounds as matches, `theme.json` `spoken` maps other spoken forms (`{ "sail\\s*tracks?": "sailtrax" }`).
+AssemblyAI Universal 3.5 Pro (fallback Whisper large v3). WAV only — the CLI converts. Brand names come back joined or split ("PromoClip", "Snap Tracks"); QA treats 2–3-word compounds as matches, `theme.json` `spoken` maps other spoken forms (`{ "sail\\s*tracks?": "sailtrax" }`).
 
 ## Music
 
@@ -29,7 +29,7 @@ Nano Banana 2 = Gemini 3.1 Flash Image (fallback Gemini 3 Pro Image). `--hires=t
 
 - Subjects come on solid #FF00FF and are keyed and die-cut by `art process`; the house-style suffix is added by the CLI.
 - It adds a thin ground line under subjects even when told not to — erase it on the raw image or regenerate.
-- **Edits can't restructure geometry** (changing a sail type, a pose): regenerate from text with a changed prompt. Edits can change clothing, expression or setting.
+- **Edits can't restructure geometry** (changing a car body, a pose): regenerate from text with a changed prompt. Edits can change clothing, expression or setting.
 - Reference images (`--ref`) keep a character consistent across poses.
 
 ## Judging audio

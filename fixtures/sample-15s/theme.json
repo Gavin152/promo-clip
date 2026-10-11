@@ -6,8 +6,8 @@
     "navy": "#111827",
     "navy2": "#1B2845",
     "surface": "#1F2937",
-    "cyan": "#01D7FC",
-    "cyanDeep": "#0891B2",
+    "accent": "#FF8A3D",
+    "accentDeep": "#C2410C",
     "teal": "#2FA487",
     "tealDark": "#1F7A64",
     "charcoal": "#2E3338",
@@ -17,9 +17,9 @@
     "white": "#FFFFFF",
     "sky": "#9ED8EE",
     "sky2": "#C9ECF6",
-    "sea1": "#4FB3D9",
-    "sea2": "#2E86B8",
-    "sea3": "#1E5F8F",
+    "blue1": "#4FB3D9",
+    "blue2": "#2E86B8",
+    "blue3": "#1E5F8F",
     "sand": "#EED9A8",
     "green": "#8BCB6A",
     "sun": "#FFB63B",
@@ -36,15 +36,13 @@
   "fonts": {
     "marker": "\"Permanent Marker\", \"Comic Sans MS\", cursive",
     "hand": "Caveat, \"Comic Sans MS\", cursive",
-    "orb": "Orbitron, \"Arial Black\", sans-serif",
+    "display": "Inter, \"Arial Black\", Helvetica, sans-serif",
     "inter": "Inter, Helvetica, Arial, sans-serif"
   },
   "fontFiles": [],
   "logo": {
     "type": "text",
-    "text": "DemoProduct",
-    "accent": "#FF8A3D",
-    "color": "#FFFFFF"
+    "text": "DemoProduct"
   },
   "endCard": {
     "qrUrl": "https://example.com",

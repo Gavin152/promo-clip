@@ -12,6 +12,8 @@ export const C = {
   navy: '#111827',
   navy2: '#1B2845',
   surface: '#1F2937',
+  accent: '#FF8A3D',
+  accentDeep: '#C2410C',
   cyan: '#01D7FC',
   cyanDeep: '#0891B2',
   teal: '#2FA487',
@@ -23,9 +25,9 @@ export const C = {
   white: '#FFFFFF',
   sky: '#9ED8EE',
   sky2: '#C9ECF6',
-  sea1: '#4FB3D9',
-  sea2: '#2E86B8',
-  sea3: '#1E5F8F',
+  blue1: '#4FB3D9',
+  blue2: '#2E86B8',
+  blue3: '#1E5F8F',
   sand: '#EED9A8',
   green: '#8BCB6A',
   sun: '#FFB63B',
@@ -39,11 +41,13 @@ export const C = {
   woodDark: '#8A5A33',
   skin: '#FFFFFF',
 };
+// engine-1.0 names, so old scenes keep their colours
+C.sea1 = C.blue1; C.sea2 = C.blue2; C.sea3 = C.blue3;
 
 export const FONT = {
   marker: '"Permanent Marker", "Comic Sans MS", cursive',
   hand: 'Caveat, "Comic Sans MS", cursive',
-  orb: 'Orbitron, "Arial Black", sans-serif',
+  display: 'Inter, "Arial Black", Helvetica, sans-serif',
   inter: 'Inter, Helvetica, Arial, sans-serif',
 };
 
@@ -55,6 +59,9 @@ export function init(theme = {}) {
   Object.assign(THEME_DATA, theme);
   Object.assign(C, theme.palette ?? {});
   Object.assign(FONT, theme.fonts ?? {});
+  // 'orb' is the engine-1.0 name of the display role: old themes and scenes keep working
+  if (theme.fonts?.orb && !theme.fonts?.display) FONT.display = theme.fonts.orb;
+  FONT.orb = FONT.display;
   INK = C.ink;
 }
 init(THEME);

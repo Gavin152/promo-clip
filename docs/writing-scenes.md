@@ -209,7 +209,7 @@ import T from '@project/timeline.js';
 import THEME from '@project/theme.json';
 ```
 
-**Colours.** Use `C.<role>` for palette roles (e.g. `C.cyan`, `C.navy`, `C.paper`) or any CSS hex string. Theme palette keys are merged into `C` at module load.
+**Colours.** Use `C.<role>` for palette roles (e.g. `C.accent`, `C.navy`, `C.paper`) or any CSS hex string. Theme palette keys are merged into `C` at module load.
 
 **Entrance animations.** `pop(t, t0, dur=0.45)` → 0 → overshoot → 1 scale. `rise(t, t0)` → 0..1 linear. `unpop(t, t0)` → exit. Gate draws on `k > 0` (not `k >= 0`): `ease.outBack` and `pop` return exact 0 before their start time.
 
@@ -290,14 +290,14 @@ Key fields:
 | Field | Type | Purpose |
 |---|---|---|
 | `palette` | `{ key: "#hex" }` | colour roles; `C.key` in scenes |
-| `fonts` | `{ marker, hand, orb, inter }` | CSS font stacks |
-| `logo` | `{ type: "text"|"image", text, accent, color }` | drawn by `logo()` |
+| `fonts` | `{ marker, hand, display, inter }` | CSS font stacks |
+| `logo` | `{ type: "text"|"image", text, color, font, weight }` | drawn by `logo()` |
 | `endCard` | `{ qrUrl, website, tagline, badges }` | end-card data read by scenes |
 | `brandWords` | `string[]` | STT hint for proper nouns |
 | `spoken` | `{ "<regex>": "<form>" }` | map spoken forms to canonical words for word timing |
 | `constants` | any | project-specific data scenes can read from `THEME.constants` |
 
-Palette role names used by the collage style: `ink`, `navy`, `navy2`, `surface`, `cyan`, `teal`, `paper`, `kraft`, `cream`, `sky`, `sun`, `orange`, `coral`, `lime`, `red`, `yellow`, `green`.
+Palette role names used by the collage style: `ink`, `navy`, `navy2`, `surface`, `accent`, `accentDeep`, `teal`, `paper`, `kraft`, `cream`, `sky`, `sun`, `orange`, `coral`, `lime`, `red`, `yellow`, `green`.
 
 ---
 
@@ -344,7 +344,7 @@ export default {
         26 * ease.outBack(prog(t, T.box + 0.3, T.box + 0.7)), C.yellow, t);
     // title slams in on the word "introducing"
     slam(ctx, 'INTRODUCING!', L.title[0], L.title[1], t, T.title - 0.05, {
-      size: L.title[2], hl: C.cyan,
+      size: L.title[2], hl: C.accent,
     });
     // caption writes on at "sorted"
     caption(ctx, 'sorted in seconds', L.cap[0], L.cap[1], t, T.sorted, {

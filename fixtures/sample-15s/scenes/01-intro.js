@@ -27,7 +27,7 @@ export default {
     const k = pop(t, T.box - 0.1, 0.5, 2.4);
     if (k > 0) art(ctx, 'box', L.box[0], L.box[1] + Math.sin(t * 2.2) * 6, L.box[2] * k, { rot: Math.sin(t * 1.3) * 0.03 });
     if (t > T.box + 0.3) sparkle(ctx, L.box[0] + L.box[2] * 0.38, L.box[1] - L.box[2] * 0.9, 26 * ease.outBack(prog(t, T.box + 0.3, T.box + 0.7)), C.yellow, t);
-    slam(ctx, 'INTRODUCING!', L.title[0], L.title[1], t, T.title - 0.05, { size: L.title[2], hl: C.cyan });
+    slam(ctx, 'INTRODUCING!', L.title[0], L.title[1], t, T.title - 0.05, { size: L.title[2], hl: C.accent });
     caption(ctx, 'sorted in seconds', L.cap[0], L.cap[1], t, T.sorted, { size: L.cap[2], hl: C.yellow, rot: -0.05 });
   },
 };

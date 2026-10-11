@@ -139,7 +139,7 @@ function loadFonts() {
   const st = document.createElement('style');
   st.textContent = FONTS_CSS;
   document.head.appendChild(st);
-  const fams = new Set(Object.values(THEME_DATA.fonts ?? {}).concat(['Orbitron', 'Inter', 'Caveat', '"Permanent Marker"']));
+  const fams = new Set(Object.values(THEME_DATA.fonts ?? {}).concat(['Inter', 'Caveat', '"Permanent Marker"']));
   const loads = [];
   for (const f of fams) for (const w of [400, 500, 700, 900]) loads.push(document.fonts.load(`${w} 40px ${f}`).catch(() => null));
   return Promise.all(loads);

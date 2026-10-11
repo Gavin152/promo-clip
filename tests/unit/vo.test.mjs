@@ -29,10 +29,10 @@ test('buildCanon: BASE_CANON normalises wi-fi variants', () => {
 });
 
 test('buildCanon: project spoken overrides take precedence', () => {
-  const theme = { spoken: { 'sail\\s*tra(x|cks)': 'sailtrax', 'nineteen ninety|€\\s?19[.,]90': 'EUR1990' } };
+  const theme = { spoken: { 'snap\\s*tra(x|cks)': 'snaptrax', 'nineteen ninety|€\\s?19[.,]90': 'EUR1990' } };
   const apply = (s) => buildCanon(theme).reduce((a, [re, v]) => a.replace(re, v), s);
-  assert.equal(apply('Sail Tracks'), 'sailtrax');
-  assert.equal(apply('SailTrax'), 'sailtrax');
+  assert.equal(apply('Snap Tracks'), 'snaptrax');
+  assert.equal(apply('SnapTrax'), 'snaptrax');
   assert.equal(apply('nineteen ninety'), 'EUR1990');
   assert.equal(apply('€19.90'), 'EUR1990');
   assert.equal(apply('Wi-Fi'), 'wifi'); // BASE_CANON still applies
@@ -74,15 +74,15 @@ test('analyseTranscript: extra STT word → EXTRA op', () => {
 });
 
 test('analyseTranscript: project canon merges multi-word to single token', () => {
-  // STT returns "Sail" + "Tracks"; script has "SailTrax"
+  // STT returns "Snap" + "Tracks"; script has "SnapTrax"
   const stt = {
     words: [
-      { word: 'Sail', start: 0.0, end: 0.3, confidence: 1.0 },
+      { word: 'Snap', start: 0.0, end: 0.3, confidence: 1.0 },
       { word: 'Tracks', start: 0.35, end: 0.7, confidence: 0.9 },
     ],
   };
-  const canon = buildCanon({ spoken: { 'sail\\s*tra(x|cks)': 'sailtrax' } });
-  const r = analyseTranscript(stt, 'SailTrax', canon);
+  const canon = buildCanon({ spoken: { 'snap\\s*tra(x|cks)': 'snaptrax' } });
+  const r = analyseTranscript(stt, 'SnapTrax', canon);
   assert.equal(r.ops.length, 0, `expected no diff ops but got: ${r.ops.join('; ')}`);
 });
 

@@ -11,7 +11,6 @@ import * as esbuild from 'esbuild';
 import { ENGINE, readJson } from './lib/paths.mjs';
 
 const ENGINE_FONTS = [
-  ['Orbitron', 'orbitron.woff2', '400 900'],
   ['Inter', 'inter.woff2', '100 900'],
   ['Caveat', 'caveat.woff2', '400 700'],
   ['Permanent Marker', 'permanent-marker.woff2', '400'],
