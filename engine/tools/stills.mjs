@@ -12,6 +12,8 @@ import { makeContactSheet } from './lib/art-pipeline.mjs';
 import { buildPaths } from './build-assets.mjs';
 
 export const HOLD = 0.5;
+/** sheet thumbnail box with the frame's aspect: 560 wide (landscape/square) or 560 tall (vertical) */
+const sheetThumb = ([w, h]) => (w >= h ? [560, Math.round((560 * h) / w)] : [Math.round((560 * w) / h), 560]);
 /** time label used in still file names: 2 -> '00002.00' */
 export const tLabel = (t) => t.toFixed(2).padStart(8, '0');
 
@@ -39,7 +41,7 @@ export async function stills(project, outDir, { times = [], scenes = false, form
   if (sheet && written.length) {
     sheetPath = join(outDir, 'sheet.jpg');
     const label = (w) => jobs.find((j) => join(outDir, j.file) === w.file).file.replace(/\.(jpg|png)$/, '');
-    await makeContactSheet(written.map((w) => ({ key: label(w), path: w.file, fullPath: w.file, meta: null })), sheetPath, { cols: Math.min(info.size[0] >= info.size[1] ? 3 : 4, written.length), thumb: info.size[0] >= info.size[1] ? [560, 560] : [360, 560] });
+    await makeContactSheet(written.map((w) => ({ key: label(w), path: w.file, fullPath: w.file, meta: null })), sheetPath, { cols: Math.min(info.size[0] >= info.size[1] ? 3 : 4, written.length), thumb: sheetThumb(info.size) });
     if (!quiet) console.log(`sheet -> ${sheetPath}`);
   }
   return { info, written, sheet: sheetPath };

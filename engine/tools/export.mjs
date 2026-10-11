@@ -10,18 +10,29 @@ import { openPlayer, frameJpeg } from './lib/page.mjs';
 import { projectName } from './lib/paths.mjs';
 import { sizeLabel } from '../js/formats.js';
 
-/** two-pass loudnorm in LINEAR mode (pure gain) to -14 LUFS / -1 dBTP; returns measured + result */
+/**
+ * loudness to -14 LUFS integrated, true peak <= -1 dBTP, as pure gain: measure, then apply the gain;
+ * when that gain would push peaks over -1 dBTP, a fast peak limiter catches only those peaks.
+ * (ffmpeg's loudnorm "linear" pass silently switches to dynamic compression whenever the target LRA
+ * or true peak can't be met with gain alone — and then fails on the channel layout with ffmpeg 6.)
+ */
 export async function normalise(wavIn, wavOut) {
   const measure = await ffmpeg(['-hide_banner', '-i', wavIn, '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json', '-f', 'null', '-'], { capture: true });
   const m = JSON.parse(measure.slice(measure.lastIndexOf('{'), measure.lastIndexOf('}') + 1));
-  // linear mode needs a target LRA >= the measured one, else ffmpeg silently falls back to dynamic
-  // compression (and, with ffmpeg 6, fails on the channel layout); keep it pure gain
-  const lra = Math.min(50, Math.max(11, Math.ceil(Number(m.input_lra)) + 1));
-  await ffmpeg(['-y', '-loglevel', 'error', '-i', wavIn, '-af', `loudnorm=I=-14:TP=-1.0:LRA=${lra}:linear=true:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset},aresample=48000`, '-ar', '48000', wavOut]);
+  const inI = Number(m.input_i), inTP = Number(m.input_tp);
+  const gain = -14 - inI;
+  const filters = [`volume=${gain.toFixed(2)}dB`];
+  const limited = inTP + gain > -1.2;
+  // limiter at 4x oversampling so it also catches inter-sample (true) peaks; 0.84 ≈ -1.5 dBFS
+  if (limited) filters.push('aresample=192000', 'alimiter=limit=0.84:attack=1:release=50:level=false');
+  filters.push('aresample=48000');
+  await ffmpeg(['-y', '-loglevel', 'error', '-i', wavIn, '-af', filters.join(','), '-ar', '48000', '-c:a', 'pcm_s16le', wavOut]);
   const check = await ffmpeg(['-hide_banner', '-i', wavOut, '-af', 'ebur128=peak=true', '-f', 'null', '-'], { capture: true });
   const sum = check.slice(check.lastIndexOf('Summary'));
   return {
-    measured: { lufs: Number(m.input_i), truePeak: Number(m.input_tp), lra: Number(m.input_lra) },
+    measured: { lufs: inI, truePeak: inTP, lra: Number(m.input_lra) },
+    gainDb: +gain.toFixed(2),
+    limited,
     lufs: Number(sum.match(/I:\s+([-\d.]+) LUFS/)?.[1]),
     truePeak: Number(sum.match(/Peak:\s+([-\d.]+) dBFS/)?.[1]),
   };
