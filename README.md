@@ -11,11 +11,9 @@
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platforms: macOS, Linux, Windows">
 </p>
 
-<p align="center">
-  https://github.com/user-attachments/assets/0d76dc2d-d61b-42e9-b01a-48fdcea82cf8
- <br>
-  <sub>▶ <a href="docs/media/promo-clip-demo.mp4">Watch the 35-second demo</a>, made end to end with promo-clip (AI spend incl. all retakes: $1.08).</sub>
-</p>
+https://github.com/user-attachments/assets/0d76dc2d-d61b-42e9-b01a-48fdcea82cf8
+
+<p align="center"><sub>A 35-second demo, made end to end with promo-clip (AI spend incl. all retakes: $1.08).</sub></p>
 
 ---
 
