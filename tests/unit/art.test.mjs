@@ -271,3 +271,11 @@ test('generate: fake client records cost and saves raw PNG + JSON', async () => 
     rmSync(project, { recursive: true });
   }
 });
+
+test('safeName refuses path tricks; refs must be images', async () => {
+  const { safeName, commands } = await import('../../engine/tools/art.mjs');
+  assert.equal(safeName('hero_1'), 'hero_1');
+  for (const bad of ['../x', 'a/b', '', '.env', 'a b']) assert.throws(() => safeName(bad), /letters, digits/);
+  await assert.rejects(commands.generate({ project: '/tmp', pos: ['x', 'p'], flags: { ref: '../.env' }, log: () => {} }), /must be a .png/);
+  await assert.rejects(commands.qr({ project: '/tmp', pos: ['https://e.com'], flags: { name: '../../evil' }, log: () => {} }), /letters, digits/);
+});

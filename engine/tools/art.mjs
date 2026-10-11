@@ -1,7 +1,7 @@
 // art sub-commands: generate (AI image), process (key+die-cut), contact sheet, resolution check,
 // manifest scan, QR code.
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve, extname, basename, dirname } from 'node:path';
+import { join, resolve, extname, basename, dirname, sep } from 'node:path';
 import { processImage, makeContactSheet, makeQrSvg, detectGroundLine } from './lib/art-pipeline.mjs';
 import { paid, quote } from './lib/paid.mjs';
 import { readJson } from './lib/paths.mjs';
@@ -48,6 +48,20 @@ function writeManifest(project, data) {
 }
 
 /** Parse image data-URL → Buffer. Returns null if not an image data-URL. */
+/** asset names become file names and manifest keys: letters, digits, - and _ only */
+export function safeName(n, what = 'name') {
+  const v = String(n ?? '').trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(v)) throw new Error(`${what} "${v}" must be 1-64 letters, digits, - or _`);
+  return v;
+}
+const REF_EXT = /\.(png|jpe?g|webp)$/i;
+/** project-relative manifest path -> absolute path, refusing anything outside the project */
+function inProject(project, rel) {
+  const full = resolve(project, rel);
+  if (full !== resolve(project) && !full.startsWith(resolve(project) + sep)) throw new Error(`path outside the project: ${rel}`);
+  return full;
+}
+
 function dataUrlToBuffer(url) {
   if (!url || !url.startsWith('data:')) return null;
   const semi = url.indexOf(';');
@@ -66,6 +80,8 @@ async function collectRefs(project, refFlag) {
   if (refFlag) {
     for (const p of String(refFlag).split(',').map(s => s.trim()).filter(Boolean)) {
       const full = resolve(project, p);
+      // refs are sent to the image API: only image files, so a typo can't upload e.g. a key file
+      if (!REF_EXT.test(full)) throw new Error(`--ref must be a .png, .jpg or .webp image: ${p}`);
       if (!existsSync(full)) throw new Error(`--ref file not found: ${p}`);
       refs.push(full);
     }
@@ -83,8 +99,9 @@ async function collectRefs(project, refFlag) {
 // ── generate ──────────────────────────────────────────────────────────────────
 
 async function generate({ project, pos, flags, log }) {
-  const [name, prompt] = pos;
-  if (!name || !prompt) throw new Error('usage: art generate <name> "<prompt>"');
+  const [rawName, prompt] = pos;
+  if (!rawName || !prompt) throw new Error('usage: art generate <name> "<prompt>"');
+  const name = safeName(rawName);
 
   const hires = flags.hires === 'true' || flags.hires === true || flags.size === '2K';
   const imageSize = hires ? '2K' : undefined;
@@ -159,8 +176,9 @@ async function processCmd({ project, pos, flags, log }) {
   let srcPath, stemName;
   if (existsSync(resolve(project, nameOrFile))) {
     srcPath = resolve(project, nameOrFile);
-    stemName = basename(nameOrFile).replace(/\.[^.]+$/, '');
+    stemName = safeName(basename(nameOrFile).replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_-]+/g, '_'), 'file name');
   } else {
+    safeName(nameOrFile);
     const rawDir = artRawDir(project);
     const src = ['png', 'jpg', 'jpeg', 'webp']
       .map(e => join(rawDir, `${nameOrFile}.${e}`))
@@ -173,7 +191,7 @@ async function processCmd({ project, pos, flags, log }) {
   const border = flags.border != null ? Number(flags.border) : 14;
   const maxSide = flags.max != null ? Number(flags.max) : 900;
   const nokey = !!flags.nokey;
-  const outKey = flags.out ?? stemName;
+  const outKey = flags.out != null ? safeName(flags.out, '--out') : stemName;
 
   const destPath = join(artDir(project), `${stemName}.png`);
 
@@ -200,7 +218,7 @@ async function contact({ project, log }) {
   const entries = [];
 
   for (const [key, relPath] of Object.entries(mf)) {
-    const fullPath = join(project, relPath);
+    const fullPath = inProject(project, relPath);
     if (!existsSync(fullPath)) {
       log(`warning: manifest entry "${key}" → ${relPath} not found, skipping`);
       continue;
@@ -256,7 +274,7 @@ async function check({ project, flags, log }) {
       results.push({ key, relPath, skip: true, reason: 'vector' });
       continue;
     }
-    const fullPath = join(project, relPath);
+    const fullPath = inProject(project, relPath);
     if (!existsSync(fullPath)) {
       results.push({ key, relPath, skip: true, reason: 'missing' });
       continue;
@@ -341,7 +359,7 @@ async function qr({ project, pos, flags, log }) {
   const [url] = pos;
   if (!url) throw new Error('usage: art qr <url> [--name qr]');
 
-  const name = flags.name ?? 'qr';
+  const name = safeName(flags.name ?? 'qr', '--name');
   const dark = flags.dark ?? '#000000';
   const light = flags.light ?? '#ffffff';
 
