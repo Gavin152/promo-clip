@@ -14,8 +14,9 @@
 1. `CHROME_PATH` environment variable
 2. Standard install paths for your OS (macOS, Windows, Linux)
 3. `google-chrome-stable`, `google-chrome`, `chromium`, `chromium-browser`, `chrome` on `PATH`
+4. Microsoft Edge (Chromium-based; present on every Windows install)
 
-If Chrome is not found, `setup` stops with an install hint. On Linux you can set `CHROME_PATH` to any Chromium binary.
+If no browser is found, `setup` and `check` print an install hint for your OS. `CHROME_PATH` can point at any Chromium-based binary. Running as root on Linux (Docker, CI) adds `--no-sandbox` automatically; set `CHROME_NO_SANDBOX=1` to force it.
 
 **OpenRouter key.** Create one at <https://openrouter.ai/keys>. Put it in a `.env` file in the video folder:
 
@@ -23,7 +24,7 @@ If Chrome is not found, `setup` stops with an install hint. On Linux you can set
 OPENROUTER_API_KEY=sk-or-…
 ```
 
-`.env` is git-ignored. The key is never read from any other location and never passed on the command line.
+The CLI reads `OPENROUTER_API_KEY` from the environment first, else from the nearest `.env` in the video folder or a parent folder. `setup` git-ignores `.env`. The key is never written to bundles, logs or `promo.json`.
 
 ---
 
@@ -82,7 +83,7 @@ node <plugin>/engine/tools/cli.mjs setup <folder> --name "My Product" --json
 In **gated mode** (the default) the conductor pauses at the end of each stage and shows you the result before continuing. Examples:
 
 - **Voice gate:** ranked takes with their file paths and a word-diff report. Open a file to listen (`open <path>` on macOS). Choose a take or ask for another.
-- **Music gate:** the stills sheet (`out/.work/*.jpg`) with the beat grid and cue placement shown.
+- **Music gate:** candidate tracks, best first: file path, score, BPM, and where the reveal and final hit land on the script.
 - **Art gate:** a contact sheet of all generated images (`.work/contact_sheet.jpg`).
 - **Scenes / formats gates:** a labelled stills sheet (`stills --sheet`) for each format.
 
@@ -154,7 +155,12 @@ This converts it to `assets/vo/vo.wav`. Then run STT to get word times (WAV only
 node V/tools/cli.mjs vo stt --project V
 ```
 
-Or provide your own word-time file (one JSON object per line, `{ word, start, end }` in seconds from the VO start) and skip the API call:
+Or provide your own word times and skip the API call. The file is JSON, times in seconds relative to `vo.wav`:
+
+```json
+{ "words": [ { "word": "Introducing", "start": 0.05, "end": 0.62 }, { "word": "Demo", "start": 0.70, "end": 0.98 } ] }
+```
+
 
 ```
 node V/tools/cli.mjs vo timing --words my-times.json --project V
@@ -168,14 +174,19 @@ node V/tools/cli.mjs music import my-track.mp3 --project V
 
 This installs the file as `assets/music/track.mp3` and runs the beat-grid analysis to produce `assets/music/cues.json`.
 
-**Art.** Drop image files into `assets/art/raw/`, then process them:
+**Art.** For a subject drawn on solid magenta (#FF00FF), `art process` keys out the background and adds a die-cut sticker border:
 
 ```
 node V/tools/cli.mjs art process my-subject.png --project V
-node V/tools/cli.mjs art manifest --project V
 ```
 
-`art process` keys out the magenta (#FF00FF) background and die-cuts the subject. For a full-bleed backdrop use `--kind backdrop`. Then `art manifest` scans `assets/art/` and `assets/img/` and writes the key-to-path table in `manifest.json`.
+For photos and screenshots, skip the key and just resize:
+
+```
+node V/tools/cli.mjs art process screenshot.png --nokey --out app_home --project V
+```
+
+Use `--kind backdrop` for a full-frame background. Or copy finished images into `assets/img/` and run `art manifest`, which scans `assets/art/` and `assets/img/` and writes the key-to-path table in `manifest.json`.
 
 ---
 
@@ -188,36 +199,34 @@ V/out/qa_report.md                      QA verdict
 V/out/qa_report.json                    machine-readable QA results
 ```
 
-For example, a video named `my-product` exported at 1080p landscape and vertical produces:
+`<name>` is the video name with anything other than letters and digits turned into `_`. A video named `my-product` exported at 1080p landscape and vertical produces:
 
 ```
-V/out/my-product_landscape_1080p.mp4
-V/out/my-product_landscape_1080p_web.mp4
-V/out/my-product_vertical_1080p.mp4
-V/out/my-product_vertical_1080p_web.mp4
+V/out/my_product_landscape_1080p.mp4
+V/out/my_product_landscape_1080p_web.mp4
+V/out/my_product_vertical_1080p.mp4
+V/out/my_product_vertical_1080p_web.mp4
 ```
 
 ---
 
 ## Permission settings for parallel scene agents
 
-The scenes and formats stages dispatch parallel subagents to write scene files concurrently. This requires two settings in your Claude Code project settings (`.claude/settings.json`):
+The scenes and formats stages dispatch parallel subagents, one per scene. Background subagents can't ask you for permission, so they need two settings in Claude Code (for example `.claude/settings.json` in the folder you run `claude` from):
 
 ```json
 {
-  "defaultMode": "acceptEdits",
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": ["Bash(node *)"]
   }
 }
 ```
 
-- `"defaultMode": "acceptEdits"` — lets subagents write files without prompting.
-- `"Bash(node *)"` — lets subagents run the CLI.
+- `acceptEdits` lets the subagents write their scene files. An allow rule alone is not enough.
+- `Bash(node *)` lets them run the video's CLI.
 
-Without these settings the scene stage detects the denial, tells you once, and falls back to writing scenes one at a time.
-
-Note: video folders outside the repo work fine as usual; only files under a git-ignored `.work/` inside the repo are blocked even for the main session.
+You can also start Claude Code with `claude --permission-mode acceptEdits`. Without these settings the stage notices the denial, tells you once, and writes the scenes one at a time instead.
 
 ---
 
@@ -226,10 +235,10 @@ Note: video folders outside the repo work fine as usual; only files under a git-
 **Chrome not found.**
 
 ```
-CHROME_PATH=/usr/bin/chromium-browser node V/tools/cli.mjs check --project V
+CHROME_PATH=/usr/bin/chromium node V/tools/cli.mjs check --project V
 ```
 
-Set `CHROME_PATH` in the shell or in the video folder's `.env`.
+Set `CHROME_PATH` in your shell profile (it is not read from `.env`).
 
 **Exit code 1 — general error.**
 
@@ -249,4 +258,4 @@ node V/tools/cli.mjs budget <new-limit> --project V
 
 **ZDR (zero-data-retention) blocks.**
 
-OpenRouter routes `google/lyria-3-pro-preview` through Google infrastructure; some accounts are blocked. The CLI automatically tries the next fallback model (`google/lyria-3-clip-preview`). If every fallback is blocked, the stage fails with exit code 1 and names the blocked models. Switch to a non-ZDR account or import your own music file.
+OpenRouter accounts with zero data retention (ZDR) enforced can't use some models, Google's Lyria music models among them. The CLI automatically tries the next fallback model (`google/lyria-3-clip-preview`). If every fallback is blocked, the stage fails with exit code 1 and names the blocked models. Switch to a non-ZDR account or import your own music file.

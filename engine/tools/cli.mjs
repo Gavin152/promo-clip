@@ -5,19 +5,27 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { findProject, ENGINE_VERSION, readJson } from './lib/paths.mjs';
-import { build } from './build-assets.mjs';
-import { stills } from './stills.mjs';
-import { exportVideo } from './export.mjs';
 import * as P from './project.mjs';
-import * as vo from './vo.mjs';
-import * as music from './music.mjs';
-import * as art from './art.mjs';
-import * as qa from './qa.mjs';
 import { parseArgs } from './lib/args.mjs';
 
-const GROUPS = { vo, music, art };
+// Everything that needs the npm packages (esbuild, sharp, puppeteer, ffmpeg) loads on first use, so
+// the project commands (setup, check, status, upgrade …) also run from a fresh plugin install that
+// has no node_modules of its own — setup installs them into the new video folder.
+const build = async (...a) => (await import('./build-assets.mjs')).build(...a);
+const stills = async (...a) => (await import('./stills.mjs')).stills(...a);
+const exportVideo = async (...a) => (await import('./export.mjs')).exportVideo(...a);
+const loadQa = () => import('./qa.mjs');
+const GROUPS = { vo: () => import('./vo.mjs'), music: () => import('./music.mjs'), art: () => import('./art.mjs') };
 
-const USAGE = `promo-clip engine ${ENGINE_VERSION}
+async function usage() {
+  let assets;
+  try {
+    const [vo, music, art] = await Promise.all([GROUPS.vo(), GROUPS.music(), GROUPS.art()]);
+    assets = `${vo.USAGE}\n${music.USAGE}\n${art.USAGE}`;
+  } catch {
+    assets = '  vo | music | art …                     (run `npm ci` in this tools/ folder to list them)';
+  }
+  return `promo-clip engine ${ENGINE_VERSION}
 usage: cli.mjs <command> [args] [--project dir] [--json] [--quiet]
 
 project
@@ -41,9 +49,8 @@ render
   layout [--format F] [--tag T --scene S] overlap / clipping / safe-zone check of every scene, or one (exit 2 on errors)
 
 assets
-${vo.USAGE}
-${music.USAGE}
-${art.USAGE}`;
+${assets}`;
+}
 
 async function run(cmd, pos, flags, ctx) {
   const { project } = ctx;
@@ -86,13 +93,13 @@ async function run(cmd, pos, flags, ctx) {
       }
       return res;
     }
-    case 'qa': return qa.run({ ...ctx, pos, flags });
+    case 'qa': return (await loadQa()).run({ ...ctx, pos, flags });
     case 'layout':
       if (flags.tag && !flags['no-build']) await build(project, { quiet: true, tag: flags.tag, scene: flags.scene });
-      return qa.layout({ ...ctx, pos, flags });
+      return (await loadQa()).layout({ ...ctx, pos, flags });
     default: {
-      const g = GROUPS[cmd];
-      if (!g) throw new Error(`unknown command "${cmd}"\n\n${USAGE}`);
+      if (!GROUPS[cmd]) throw new Error(`unknown command "${cmd}"\n\n${await usage()}`);
+      const g = await GROUPS[cmd]();
       const [sub, ...rest] = pos;
       const fn = g.commands[sub];
       if (!fn) throw new Error(`unknown ${cmd} command "${sub ?? ''}"\n${g.USAGE}`);
@@ -104,7 +111,7 @@ async function run(cmd, pos, flags, ctx) {
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const { pos, flags } = parseArgs(rest);
-  if (!cmd || cmd === 'help' || flags.help) { console.log(USAGE); return; }
+  if (!cmd || cmd === 'help' || flags.help) { console.log(await usage()); return; }
   const json = !!flags.json;
   const log = flags.quiet ? () => {} : json ? (...a) => console.error(...a) : (...a) => console.log(...a);
   const project = cmd === 'setup' ? null : findProject(flags.project);

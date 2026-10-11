@@ -1,0 +1,16 @@
+{
+  "name": "promo-clip",
+  "owner": { "name": "promo-clip contributors" },
+  "metadata": {
+    "description": "Short animated promo videos made with Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "promo-clip",
+      "source": "./",
+      "description": "Short animated promo videos for any product, in a hand-drawn paper-collage style: guided discovery, script, AI or your own voice-over, music and art, scenes, 16:9 / 9:16 / 1:1 variants and MP4 export.",
+      "category": "productivity",
+      "homepage": "https://github.com/Gavin152/promo-clip"
+    }
+  ]
+}

@@ -1,7 +1,5 @@
 # Costs
 
----
-
 ## What costs money
 
 **OpenRouter only.** Only four CLI commands make paid API calls:
@@ -86,10 +84,10 @@ node V/tools/cli.mjs cost --project V
 Output example:
 
 ```
-spent $0.234 of $10.00 (left $9.766)
+spent $0.274 of $10.00 (left $9.726)
   voice     $0.026  (4 calls)
-  music     $0.080  (1 call)
-  art       $0.128  (2 calls, 1 estimated)
+  music     $0.080  (1 calls)
+  art       $0.168  (2 calls, 1 estimated)
 ```
 
 ### Setting the budget
@@ -115,9 +113,9 @@ These figures are from actual test runs:
 
 | Run | What | OpenRouter cost | Claude tokens |
 |---|---|---|---|
-| Phase 2 smoke test | 1 TTS take, STT, 1 Lyria track, 1 subject image | **$0.23** | — |
-| Phase 4 5-scene teaser | AI voice + music + art (5 scenes) | **$0.43** | ≈ $10 |
-| Phase 3 auto run | full 8-stage run, all BYO assets | **$0** | ≈ $1.39 |
+| Smoke test | 1 TTS take, STT, 1 Lyria track, 1 subject image | **$0.23** | — |
+| 5-scene teaser | AI voice + music + art, parallel scene agents + reviewer | **$0.43** | ≈ $10 |
+| Full auto run | all 8 stages, own assets only | **$0** | ≈ $1.39 |
 
 The scenes stage (parallel agents writing 5 scene files, one reviewer pass, one fix pass) cost approximately **$10 of Claude tokens**. That is a worst case for a complex video; a simpler 3-scene video costs less.
 
@@ -133,7 +131,7 @@ Every AI step has a BYO path:
 |---|---|
 | voice | `vo import` your own recording, then `vo timing --words` with your own word-time file |
 | music | `music import` your own track |
-| art | put your own images in `assets/art/raw/` and `assets/img/`, then `art process` + `art manifest` |
+| art | `art process <file>` (add `--nokey` for photos and screenshots), or copy images into `assets/img/` and run `art manifest` |
 | scenes | write `timeline.js` and `scenes/*.js` by hand |
 
 With all BYO assets, the entire pipeline (script through export) costs $0 on OpenRouter.
@@ -142,14 +140,12 @@ With all BYO assets, the entire pipeline (script through export) costs $0 on Ope
 
 ## Render time
 
-Rendering is done on the CPU (headless Chrome canvas + ffmpeg). Approximate times on Apple M-series:
+Rendering runs headless Chrome (canvas) plus ffmpeg on your machine. Measured on Apple Silicon with the 15-second test fixture, master + web MP4 per run:
 
-| Output size | Approximate render time |
-|---|---|
-| 720p | 1× real time |
-| 1080p | ~2× real time |
-| 4K | ~4× real time (4× the pixels to encode) |
+| Output size | Wall clock for 15 s of film | Ratio |
+|---|---|---|
+| 720p | 10 s | ≈ 0.7× real time |
+| 1080p | 22 s | ≈ 1.5× real time |
+| 4K | 74 s | ≈ 5× real time |
 
-A 30-second 1080p export takes roughly 60 seconds of wall-clock time. A 4K export of the same video takes roughly 4 minutes.
-
-Parallel exports of multiple formats run sequentially (one format at a time). `export --all` exports every format defined in `promo.json` `output.formats`.
+Busier scenes (many stickers, photos, characters) render slower. Expect a 60-second film at 1080p to take one to three minutes per format. `export --all` renders every format and size in `promo.json` one after another.

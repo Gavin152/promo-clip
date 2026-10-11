@@ -28,7 +28,7 @@ V/
   out/                 final MP4s and QA report
 ```
 
-Scenes are imported by file-name order. `01-intro.js` plays before `02-feature.js`. The `id` in the default export must match the file name without `.js`.
+Every `scenes/*.js` file is picked up automatically; scenes play in order of their `start` time. A scene's `id` is its file name without `.js` (if you set `id` yourself, keep it equal to the file name).
 
 ---
 
@@ -37,7 +37,7 @@ Scenes are imported by file-name order. `01-intro.js` plays before `02-feature.j
 `timeline.js` exports a plain object `T` of story events (film times in seconds), derived from word times and music cues. It also exports `TRANSITIONS`.
 
 ```js
-import { W, WE, Wa, S, HIT, onBeat, sceneStart } from '@engine/timeline-base.js';
+import { W, WE, Wa, HIT, onBeat, sceneStart } from '@engine/timeline-base.js';
 
 const T = {};
 
@@ -46,19 +46,20 @@ T.s1 = 0;
 
 // W('word') = film time of the first occurrence of that word
 T.title   = W('introducing');
-T.product = W('widget', 0);   // nth occurrence (0-indexed)
+T.logo    = W('widget', 1);   // second occurrence (nth is 0-based)
 
 // scene 2 starts 0.3 s before the word 'try' (the CUT_PAD default)
 T.s2 = sceneStart('try');
 
-// snap an event to the nearest beat after the word 'works'
+// snap to a beat if one is within 0.15 s of the word 'works'
 T.beat  = onBeat(W('works'));
 
 // the music's final hit
 T.final = HIT.final;
 
-// WE = word end time; Wa = adjusted time (after vo gaps)
-T.qr = WE('now') + 0.2;
+// WE = end of a word; Wa = first occurrence at or after a time
+T.qr   = WE('now') + 0.2;
+T.tap2 = Wa('tap', T.s2);
 
 export default T;
 
@@ -73,17 +74,17 @@ export const TRANSITIONS = [
 
 | Export | What it returns |
 |---|---|
-| `W(word, nth=0)` | film start time of the nth occurrence of `word` |
-| `WE(word, nth=0)` | film end time |
-| `Wa(word, nth=0)` | adjusted start time (accounts for VO gaps) |
-| `S(word)` | `{ start, end }` span |
-| `HIT` | `{ final, …named hits from cues.json }` |
-| `onBeat(t)` | t snapped forward to the nearest beat |
+| `W(word, nth=0)` | film start time of the nth occurrence of `word` (0-based) |
+| `WE(word, nth=0)` | film end time of that occurrence |
+| `Wa(word, after)` | start of the first occurrence at or after film time `after` |
+| `S(phrase)` | film start of the sentence that contains `phrase` |
+| `HIT` | music hits from `cues.json` (`HIT.final` = the closing hit) |
+| `onBeat(t, tol=0.15)` | the nearest beat if one is within `tol` seconds, else `t` |
 | `sceneStart(word, nth, pad)` | `W(word, nth) - pad` (default pad = 0.3 s) |
 | `BEAT` | beat duration (seconds) |
 | `DURATION` | total film duration (seconds) |
 
-Word matching is Unicode-aware and case-insensitive. Set `theme.json` `spoken` to map regex patterns when a spoken form differs from the script.
+All times are film seconds and already include the VO start offset and any widened pauses. Word matching is exact (never a prefix: `W('no')` does not match "now"), Unicode-aware and case-insensitive. An unknown word throws with its name at build time. Set `theme.json` `spoken` to map regex patterns when a spoken form differs from the script.
 
 ### Transitions
 
@@ -104,7 +105,6 @@ Every `scenes/NN-name.js` is an ES module with a single default export:
 
 ```js
 export default {
-  id: 'NN-name',                 // must match the file name without .js
   start: (T) => T.s1,            // film seconds where this scene starts
   layout: {
     land: { … },                 // positions for 16:9 landscape (1920 x 1080)
@@ -256,16 +256,16 @@ Keep `vel` in the range 0.1–0.5. SFX sit under the voice-over; too-loud cues m
 node V/tools/cli.mjs build --project V
 
 # one labelled stills sheet per format (useful for review)
-node V/tools/cli.mjs stills V/out --scenes --sheet --project V
+node V/tools/cli.mjs stills V/.work/stills --scenes --sheet --project V
 
 # stills at specific times
-node V/tools/cli.mjs stills V/out 0 3.5 8 --project V
+node V/tools/cli.mjs stills V/.work/stills 0 3.5 8 --project V
 
-# PNG stills instead of JPEG
-node V/tools/cli.mjs stills V/out 0 --png=true --project V
+# lossless PNG stills instead of JPEG
+node V/tools/cli.mjs stills V/.work/stills 0 --png=true --project V
 
 # stills at a specific format and size
-node V/tools/cli.mjs stills V/out --scenes --format vertical --size 4K --project V
+node V/tools/cli.mjs stills V/.work/stills --scenes --format vertical --size 4K --project V
 
 # layout check (overlaps, clipping, safe-zone violations) — exit 2 on errors
 node V/tools/cli.mjs layout --project V
@@ -273,7 +273,7 @@ node V/tools/cli.mjs layout --format vertical --project V
 
 # private build for one scene (used by parallel scene agents)
 node V/tools/cli.mjs build --tag 02-feature --scene 02-feature --project V
-node V/tools/cli.mjs stills V/out --scenes --tag 02-feature --scene 02-feature --project V
+node V/tools/cli.mjs stills V/.work/stills --scenes --tag 02-feature --scene 02-feature --project V
 node V/tools/cli.mjs layout --tag 02-feature --scene 02-feature --project V
 ```
 
@@ -303,10 +303,10 @@ Palette role names used by the collage style: `ink`, `navy`, `navy2`, `surface`,
 
 ## Complete short example scene
 
-The following scene is adapted from `fixtures/sample-15s/scenes/01-intro.js`. It builds without modification in that fixture.
+The following scene is adapted from `fixtures/sample-15s/scenes/01-intro.js`. Drop it into a copy of the fixture as `scenes/01-intro.js` and it builds as is.
 
 ```js
-// 01-intro: "Introducing Widget. Your week, sorted in seconds."
+// 01-intro: "Introducing Demo Product. Your week, sorted in seconds."
 import { prog, ease, pop } from '@engine/util.js';
 import { C, backdrop, art, sun, cloud, slam, caption, popIn, applyShake, sparkle } from '@engine/style/collage/index.js';
 import T from '@project/timeline.js';
@@ -334,7 +334,7 @@ export default {
     // decorative elements
     popIn(ctx, L.sun[0], L.sun[1], pop(t, 0.3, 0.5), (c) => sun(c, 0, 0, 58, { t }));
     cloud(ctx, L.cloud[0] + lt * 14, L.cloud[1], 0.5);
-    // product box drops in on the word "widget", then bobs gently
+    // product box drops in on the word "demo", then bobs gently
     const k = pop(t, T.box - 0.1, 0.5, 2.4);
     if (k > 0) art(ctx, 'box', L.box[0], L.box[1] + Math.sin(t * 2.2) * 6, L.box[2] * k, {
       rot: Math.sin(t * 1.3) * 0.03,
