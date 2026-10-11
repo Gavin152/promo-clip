@@ -61,7 +61,8 @@ export async function exportVideo(project, o = {}) {
     const wavN = join(tmp, 'mix_norm.wav');
     audio = await normalise(wav, wavN);
     log(`mix ${audio.measured.lufs} LUFS -> ${audio.lufs} LUFS, true peak ${audio.truePeak} dBFS`);
-    if (o.audioOnly) return { format, size: info.size, fps, duration: info.duration, audio, wav: wavN };
+    const stems = o.stems ? Object.fromEntries(['vo', 'music', 'sfx', 'musicRaw'].map((k) => [k, join(tmp, `stem_${k}.wav`)])) : null;
+    if (o.audioOnly) return { format, size: info.size, fps, duration: info.duration, audio, wav: wavN, stems, dir: tmp };
 
     frames = Math.round(info.duration * fps);
     const video = join(tmp, 'video.mp4');

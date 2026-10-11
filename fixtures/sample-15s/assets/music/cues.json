@@ -78,7 +78,7 @@
  ],
  "mix": {
   "bedDb": -8,
-  "duckDb": -18,
+  "duckDb": -10,
   "attack": 0.18,
   "release": 0.6,
   "lookahead": 0.15,

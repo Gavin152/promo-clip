@@ -384,9 +384,7 @@ async function mixCommand({ project, pos: _p, flags, log }) {
   const TOL = flags.tol ? Number(flags.tol) : 1.5;
   log('rendering audio stems…');
   const render = await exportVideo(project, { audioOnly: true, stems: true, noBuild: !!flags['no-build'], quiet: flags.quiet });
-  const tag = `${render.format ?? 'landscape'}_${render.size ? render.size.join('x') : '1080p'}`;
-  const tmp = join(project, '.work/render', tag);
-  const voWav = join(tmp, 'stem_vo.wav'), muWav = join(tmp, 'stem_music.wav');
+  const voWav = render.stems.vo, muWav = render.stems.music;
 
   const SR16 = 16000;
   const vo = decode(voWav, SR16), mu = decode(muWav, SR16);
@@ -443,9 +441,7 @@ async function checkCommand({ project, pos: _p, flags, log }) {
   const TARGET = 13.5, TOL = 2.0;
   log('rendering audio stems for check…');
   const render = await exportVideo(project, { audioOnly: true, stems: true, noBuild: !!flags['no-build'], quiet: flags.quiet });
-  const tag = `${render.format ?? 'landscape'}_${render.size ? render.size.join('x') : '1080p'}`;
-  const tmp = join(project, '.work/render', tag);
-  const voWav = join(tmp, 'stem_vo.wav'), muWav = join(tmp, 'stem_music.wav');
+  const voWav = render.stems.vo, muWav = render.stems.music;
 
   const SR16 = 16000;
   const vo = decode(voWav, SR16), mu = decode(muWav, SR16);

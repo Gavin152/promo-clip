@@ -161,7 +161,7 @@ const cues = {
   accents: [{ film: +(revealTrack + offset).toFixed(3), track: revealTrack, change: 3 }],
   downbeats,
   beats,
-  mix: { bedDb: -8, duckDb: -18, attack: 0.18, release: 0.6, lookahead: 0.15, mergeGap: 0.7, sections: [], fadeIn: 0.4, fadeOut: 0.8, voDb: 0, sfxDb: -8 },
+  mix: { bedDb: -8, duckDb: -10, attack: 0.18, release: 0.6, lookahead: 0.15, mergeGap: 0.7, sections: [], fadeIn: 0.4, fadeOut: 0.8, voDb: 0, sfxDb: -8 },
 };
 writeFileSync(out('assets/music/cues.json'), JSON.stringify(cues, null, 1) + '\n');
 
