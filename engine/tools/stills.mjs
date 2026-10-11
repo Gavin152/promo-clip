@@ -2,24 +2,26 @@
 //   stills(project, outDir, { times: [2, 8], format, size })      -> f_00002.00.jpg …
 //   stills(project, outDir, { scenes: true, format, size })       -> <scene-id>.jpg …
 //   sheet: true also writes <outDir>/sheet.jpg, all stills in one labelled image
+//   tag / scene: render a writer's private build (build --tag) / only that scene's still
 // A scene's still is taken HOLD seconds before its end: after its last entrance, before the cut's
 // swipe (±0.32 s) or the closing fade (0.45 s) covers it.
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { openPlayer, frameJpeg, framePng } from './lib/page.mjs';
 import { makeContactSheet } from './lib/art-pipeline.mjs';
+import { buildPaths } from './build-assets.mjs';
 
 export const HOLD = 0.5;
 /** time label used in still file names: 2 -> '00002.00' */
 export const tLabel = (t) => t.toFixed(2).padStart(8, '0');
 
-export async function stills(project, outDir, { times = [], scenes = false, format = 'landscape', size = '1080p', quality = 0.85, quiet = false, png = false, sheet = false } = {}) {
+export async function stills(project, outDir, { times = [], scenes = false, format = 'landscape', size = '1080p', quality = 0.85, quiet = false, png = false, sheet = false, tag = null, scene = null } = {}) {
   await mkdir(outDir, { recursive: true });
   const usePng = png === true || png === 'true';
-  const { page, info, close } = await openPlayer(project, { format, size });
+  const { page, info, close } = await openPlayer(project, { format, size, bundle: tag ? buildPaths(project, tag).bundle : null });
   const ext = usePng ? '.png' : '.jpg';
   const jobs = times.map((t) => ({ t: Number(t), file: `f_${tLabel(Number(t))}${ext}` }));
-  if (scenes) for (const s of info.scenes) jobs.push({ t: Math.max((s.start + s.end) / 2, s.end - HOLD), file: `${s.id}${ext}` });
+  if (scenes) for (const s of info.scenes.filter((x) => !scene || x.id === scene)) jobs.push({ t: Math.max((s.start + s.end) / 2, s.end - HOLD), file: `${s.id}${ext}` });
   const written = [];
   try {
     for (const j of jobs) {

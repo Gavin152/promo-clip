@@ -4,9 +4,9 @@ import { serve } from '../serve.mjs';
 import { findChrome } from './chrome.mjs';
 import { resolveSize } from '../../js/formats.js';
 
-export async function openPlayer(project, { format = 'landscape', size = '1080p', timeout = 120000 } = {}) {
+export async function openPlayer(project, { format = 'landscape', size = '1080p', timeout = 120000, bundle = null } = {}) {
   resolveSize(format, size); // throws on a bad format / size before Chrome starts
-  const { srv, url } = await serve(project);
+  const { srv, url } = await serve(project, { bundle });
   const browser = await puppeteer.launch({
     executablePath: findChrome(),
     headless: true,

@@ -34,11 +34,11 @@ project
   upgrade [--no-install]                  replace the video's engine with this one
 
 render
-  build                                   bundle the player (promo.bundle.js)
-  stills <dir> [t …] [--scenes] [--sheet] proof frames (--format, --size, --png); --sheet = one labelled image
+  build [--tag T --scene S]               bundle the player (promo.bundle.js); --tag = a private build in .work/build-T for one parallel scene writer
+  stills <dir> [t …] [--scenes] [--sheet] proof frames (--format, --size, --png); --sheet = one labelled image; --tag T --scene S = a writer's own build / scene
   export [--format F|--all] [--size S] [--fps N] [--web-only] [--audio-only] [--stems] [--out file] [--no-build]
   qa [--format F] [--size S]              QA report on the exports (exit 2 on issues)
-  layout [--format F]                     overlap / clipping / safe-zone check of every scene (exit 2 on errors)
+  layout [--format F] [--tag T --scene S] overlap / clipping / safe-zone check of every scene, or one (exit 2 on errors)
 
 assets
 ${vo.USAGE}
@@ -66,12 +66,12 @@ async function run(cmd, pos, flags, ctx) {
     case 'budget': { const b = P.budget(project, pos[0]); ctx.log(`$${b.spentUsd.toFixed(3)} of $${b.limitUsd.toFixed(2)}`); return b; }
     case 'output': return P.output(project, flags);
     case 'upgrade': return P.upgrade(project, { install: !flags['no-install'], log: ctx.log });
-    case 'build': return build(project, { quiet: flags.quiet });
+    case 'build': return build(project, { quiet: flags.quiet, tag: flags.tag, scene: flags.scene });
     case 'stills': {
       const [out, ...times] = pos;
       if (!out || (!times.length && !flags.scenes)) throw new Error('usage: stills <dir> <t…> | --scenes');
-      if (!flags['no-build']) await build(project, { quiet: true });
-      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet, png: flags.png, sheet: !!flags.sheet });
+      if (!flags['no-build']) await build(project, { quiet: true, tag: flags.tag, scene: flags.scene });
+      return stills(project, out, { times: times.map(Number), scenes: !!flags.scenes, format, size, quiet: flags.quiet, png: flags.png, sheet: !!flags.sheet, tag: flags.tag, scene: flags.scene });
     }
     case 'export': {
       const o = { size, fps: flags.fps, webOnly: !!flags['web-only'], audioOnly: !!flags['audio-only'], stems: !!flags.stems, out: flags.out, noBuild: !!flags['no-build'], quiet: flags.quiet };
@@ -87,7 +87,9 @@ async function run(cmd, pos, flags, ctx) {
       return res;
     }
     case 'qa': return qa.run({ ...ctx, pos, flags });
-    case 'layout': return qa.layout({ ...ctx, pos, flags });
+    case 'layout':
+      if (flags.tag && !flags['no-build']) await build(project, { quiet: true, tag: flags.tag, scene: flags.scene });
+      return qa.layout({ ...ctx, pos, flags });
     default: {
       const g = GROUPS[cmd];
       if (!g) throw new Error(`unknown command "${cmd}"\n\n${USAGE}`);

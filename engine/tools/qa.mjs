@@ -12,6 +12,7 @@ import { openPlayer, frameJpeg, frameBoxes } from './lib/page.mjs';
 import { probeFile, streamDuration } from './lib/qa-probe.mjs';
 import { checkLayout } from './lib/layout-check.mjs';
 import { QaFail } from './lib/errors.mjs';
+import { buildPaths } from './build-assets.mjs';
 import { sizeLabel } from '../js/formats.js';
 import sharp from 'sharp';
 
@@ -316,7 +317,7 @@ export async function run({ project, flags = {}, log = console.log } = {}) {
 }
 
 /**
- * layout [--format F]: overlap / clipping / safe-zone check on every scene's final state, without
+ * layout [--format F] [--tag T --scene S]: overlap / clipping / safe-zone check on every scene's final state, without
  * exporting (the scenes and formats stages run it after writing layouts). Exit 2 on errors.
  */
 export async function layout({ project, flags = {}, log = console.log } = {}) {
@@ -324,10 +325,11 @@ export async function layout({ project, flags = {}, log = console.log } = {}) {
   const formats = flags.format ? [flags.format] : state.output?.formats ?? ['landscape'];
   const out = [];
   for (const format of formats) {
-    const { page, info, close } = await openPlayer(project, { format, size: '720p' });
+    const { page, info, close } = await openPlayer(project, { format, size: '720p', bundle: flags.tag ? buildPaths(project, flags.tag).bundle : null });
     try {
       log(`${format}:`);
-      const r = await checkLayouts(page, info, format, log);
+      const shown = flags.scene ? { ...info, scenes: info.scenes.filter((x) => x.id === flags.scene) } : info;
+      const r = await checkLayouts(page, shown, format, log);
       for (const c of r.checks) log(`  warning ${c.scene}: ${c.msg ?? c.kind}`);
       for (const i of r.issues) log(`  ERROR ${i.scene}: ${i.msg ?? i.kind}`);
       out.push({ format, ...r });

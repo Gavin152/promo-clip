@@ -8,7 +8,8 @@ import { ENGINE } from './lib/paths.mjs';
 
 const TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.wav': 'audio/wav', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2', '.json': 'application/json' };
 
-export function serve(project, port = 0) {
+/** bundle: serve this file as /promo.bundle.js (a writer's private build) */
+export function serve(project, { port = 0, bundle = null } = {}) {
   const root = resolve(project);
   return new Promise((res) => {
     const srv = createServer(async (req, rsp) => {
@@ -18,6 +19,7 @@ export function serve(project, port = 0) {
         let file = resolve(join(root, p === '/' ? 'index.html' : p));
         if (file !== root && !file.startsWith(root + sep)) throw new Error('bad path');
         if (p.replace(/^\//, '') in { '': 1, 'index.html': 1 } && !existsSync(file)) file = join(ENGINE, 'index.html');
+        if (bundle && p === '/promo.bundle.js') file = bundle;
         const data = await readFile(file);
         rsp.writeHead(200, { 'content-type': TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream' });
         rsp.end(data);
