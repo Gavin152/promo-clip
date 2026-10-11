@@ -17,7 +17,7 @@ import {
 } from './lib/music-dsp.mjs';
 
 export const USAGE = `\
-  music generate [name] [--style "…"|--prompt F] [--n N]   generate music candidates (Lyria)
+  music generate [name] [--seconds N] [--style "…"|--prompt F] [--n N]   generate music candidates (Lyria)
   music cues [file] [--analyse-only] [--target w[#n]] [--reveal w[#n]]
                                                             BPM/beats/placement → cues.json
   music import <file> [--keep-mix]                         install track + run cues
@@ -183,6 +183,14 @@ function rankingScore({ revealLiftDb, alignmentError, lufs }) {
 // ---------------------------------------------------------------- commands
 
 /** generate [name] [--style "…"|--prompt F] [--n N]  → assets/music/alternates/<name>.<ext> */
+/** music length to ask for: --seconds, else film length from vo/timing.json (+6 s slack), else promo.json lengthSec, else 60 */
+export function targetSeconds(project, flags = {}) {
+  if (flags.seconds) return Math.round(Number(flags.seconds));
+  const t = readJson(join(project, 'vo/timing.json'), null);
+  if (t?.words?.length) return Math.ceil((t.vo_start ?? 0) + t.words.at(-1).end + (t.tail ?? 3) + 6);
+  return Math.round(readJson(join(project, 'promo.json'), {}).lengthSec ?? 60);
+}
+
 async function generate({ project, pos, flags, log, json }) {
   const name = pos[0] ?? `lyria_${Date.now()}`;
   const n = flags.n ? Number(flags.n) : 1;
@@ -211,6 +219,10 @@ async function generate({ project, pos, flags, log, json }) {
       prompt = `Upbeat modern background music${productName ? ` for ${productName}` : ''}. Energetic, positive, cinematic.`;
     }
   }
+
+  // Lyria picks its own length (a live test gave 179 s): ask for the film's length plus room to place it
+  const secs = targetSeconds(project, flags);
+  if (!/\bseconds?\b/i.test(prompt)) prompt = `${prompt.trim().replace(/\.?$/, '.')} Instrumental, about ${secs} seconds long, ending with a clear final chord at about ${secs - 3} seconds.`;
 
   const altDir = join(project, 'assets/music/alternates');
   mkdirSync(altDir, { recursive: true });

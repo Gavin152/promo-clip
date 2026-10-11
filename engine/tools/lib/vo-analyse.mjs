@@ -83,6 +83,9 @@ export function analyseTranscript(stt, ttsText, canon) {
     }
   }
 
+  // compounds: STT often writes a brand as one word ("PromoClip") or splits one ("Demo Product")
+  joinCompounds(ref, hyp);
+
   // Levenshtein alignment
   const n = ref.length, m = hyp.length;
   const D = Array.from({ length: n + 1 }, (_, i) =>
@@ -115,10 +118,54 @@ export function analyseTranscript(stt, ttsText, canon) {
     joins.push({ a: a.word, b: b.word, at: a.end, gap: b.start - a.end, scriptPunct });
   }
   const longMid = joins.filter((x) => !x.scriptPunct && x.gap > 0.25);
-  const tight = joins.filter((x) => x.gap < 0.04);
+  const tight = joins.filter((x, k) => x.gap < 0.04 && !hyp[k + 1].compound);
   const lowConf = hyp.filter((w) => w.conf != null && w.conf < 0.6);
   const span = hyp.at(-1).end - hyp[0].start;
   return { ops, longMid, tight, lowConf, joins, first: hyp[0].start, last: hyp.at(-1).end, rate: m / span, nRef: n, nHyp: m, words: hyp };
+}
+
+/**
+ * In place: split a hypothesis token that equals 2-3 consecutive script words joined
+ * ("promoclip" vs "promo clip"; times shared by letter count), and merge 2-3 consecutive
+ * hypothesis tokens that join to one script word ("demo product" vs "demoproduct").
+ */
+export function joinCompounds(ref, hyp) {
+  const refSet = new Set(ref.map((r) => r.n));
+  const grams = new Map();
+  for (let i = 0; i < ref.length; i++) for (const k of [2, 3]) {
+    if (i + k > ref.length) continue;
+    const parts = ref.slice(i, i + k).map((r) => r.n);
+    grams.set(parts.join(''), parts);
+  }
+  for (let j = 0; j < hyp.length; j++) {
+    const h = hyp[j];
+    // merge first (one script word spoken/transcribed as several)
+    let merged = false;
+    for (const k of [3, 2]) {
+      if (j + k > hyp.length) continue;
+      const joined = hyp.slice(j, j + k).map((x) => x.n).join('');
+      if (refSet.has(joined) && !refSet.has(h.n)) {
+        const last = hyp[j + k - 1];
+        hyp.splice(j, k, { ...h, word: hyp.slice(j, j + k).map((x) => x.word).join(' '), n: joined, end: last.end });
+        merged = true;
+        break;
+      }
+    }
+    if (merged || refSet.has(h.n)) continue;
+    const parts = grams.get(h.n);
+    if (!parts) continue;
+    const total = parts.reduce((a, p) => a + p.length, 0);
+    let t = h.start;
+    const split = parts.map((p, i) => {
+      const d = ((h.end - h.start) * p.length) / total;
+      const punct = i === parts.length - 1 ? (h.word.match(/[.,!?:;…]+$/)?.[0] ?? '') : '';
+      const w = { ...h, word: p + punct, n: p, start: +t.toFixed(3), end: +(t + d).toFixed(3), compound: i > 0 };
+      t += d;
+      return w;
+    });
+    hyp.splice(j, 1, ...split);
+    j += split.length - 1;
+  }
 }
 
 /**

@@ -125,12 +125,13 @@ export function client({ project, title = 'promo-clip', key, fetchImpl = fetch, 
   }
 
   /** generation stats (actual cost) by id; OpenRouter may need a moment to have them */
-  async function generation(id, tries = 3) {
+  // (audio generations appeared after ~5-10 s in a live test, so wait up to ~20 s in total)
+  async function generation(id, tries = 6) {
     if (!id) return null;
     for (let i = 0; i < tries; i++) {
       const r = await fetchImpl(`${BASE}/generation?id=${encodeURIComponent(id)}`, { headers: headers() });
       if (r.ok) return (await r.json()).data;
-      await sleep(1500 * (i + 1));
+      if (i < tries - 1) await sleep(Math.min(6000, 1000 * (i + 1)));
     }
     return null;
   }

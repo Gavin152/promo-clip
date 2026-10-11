@@ -331,3 +331,17 @@ test('vo timing --words: own word times instead of STT (no API), seeds the no-ga
   assert.ok(existsSync(join(dir, 'vo/timing_nogaps.json')) && existsSync(join(dir, 'assets/vo/vo_nogaps.wav')));
   await assert.rejects(commands.timing({ project: dir, pos: [], flags: {}, log: () => {} }), /vo stt|--words/);
 });
+
+test('compound brand words: one STT token for two script words, and the reverse', async () => {
+  const { analyseTranscript, buildCanon } = await import('../../engine/tools/lib/vo-analyse.mjs');
+  const canon = buildCanon({});
+  const w = (word, start, end) => ({ word, start, end, confidence: 0.9 });
+  const a = analyseTranscript({ words: [w('Hello', 0, 0.4), w('from', 0.45, 0.6), w('PromoClip,', 0.65, 1.25), w('hi.', 1.4, 1.6)] }, 'Hello from promo clip, hi.', canon);
+  assert.deepEqual(a.ops, []);
+  assert.deepEqual(a.words.slice(2, 4).map((x) => [x.word, x.start, x.end]), [['promo', 0.65, 0.983], ['clip,', 0.983, 1.25]]);
+  assert.equal(a.tight.length, 0);
+  const b = analyseTranscript({ words: [w('Get', 0, 0.2), w('Demo', 0.3, 0.5), w('Product', 0.55, 0.9)] }, 'Get DemoProduct', canon);
+  assert.deepEqual(b.ops, []);
+  assert.equal(b.words.length, 2);
+  assert.equal(b.words[1].end, 0.9);
+});
