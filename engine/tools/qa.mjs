@@ -153,12 +153,30 @@ async function checkQr(page, info, theme, log) {
  * Run layout check for all scenes (at end - 0.5 s) using __frameBoxes.
  * Returns { issues, checks }.
  */
+/** luminance spread of a downscaled frame: blank paper ~2-15, real scenes 35+ (calibrated on the fixture + a 5-scene film) */
+export const EMPTY_DETAIL = 20;
+async function frameDetail(page, t) {
+  const st = await sharp(await frameJpeg(page, t, 0.8)).resize(160).greyscale().stats();
+  return st.channels[0].stdev;
+}
+
 export async function checkLayouts(page, info, format, log) {
   const issues = [];
   const checks = [];
 
   for (const sc of info.scenes) {
     const t = Math.max(sc.start, sc.end - 0.5);
+    // an unwritten scene (placeholder) or a nearly blank frame must never pass QA
+    if (sc.placeholder) {
+      issues.push({ severity: 'error', check: 'content', scene: sc.id, kind: 'placeholder', msg: `scene ${sc.id} is still an empty placeholder (draw() {})` });
+      log(`  content ${sc.id}: EMPTY PLACEHOLDER`);
+      continue;
+    }
+    const detail = await frameDetail(page, t);
+    if (detail < EMPTY_DETAIL) {
+      checks.push({ check: 'content', scene: sc.id, kind: 'nearlyEmpty', detail, msg: `scene ${sc.id} looks nearly empty at t=${t.toFixed(2)} (detail ${detail.toFixed(1)} < ${EMPTY_DETAIL})` });
+      log(`  content ${sc.id}: nearly empty (detail ${detail.toFixed(1)})`);
+    }
     const boxes = await frameBoxes(page, t);
     const { warnings, errors } = checkLayout(boxes, format);
 

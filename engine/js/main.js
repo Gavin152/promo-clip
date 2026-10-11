@@ -187,7 +187,7 @@ window.__duration = DURATION;
 window.__size = [OUT_W, OUT_H];
 window.__format = FMT;
 window.__T = T;
-window.__scenes = SCENES.map((s) => ({ id: s.id, start: s.start, end: Math.min(s.end, DURATION), layout: s.L }));
+window.__scenes = SCENES.map((s) => ({ id: s.id, start: s.start, end: Math.min(s.end, DURATION), layout: s.L, placeholder: /^draw\s*\(\s*\)\s*\{\s*\}$/.test(String(s.draw ?? '').trim()) }));
 window.__renderFrame = renderFrame;
 window.__audio = audio;
 window.__renderAudio = async (solo) => {

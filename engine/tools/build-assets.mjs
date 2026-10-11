@@ -132,8 +132,10 @@ export const MUSIC_B64 = '${b64(track)}';
     }
   }
   const bytes = readFileSync(bundle).length;
+  const placeholders = scenes.filter((f) => /draw\s*\(\s*\)\s*\{\s*\}/.test(readFileSync(join(project, 'scenes', f), 'utf8')));
+  if (placeholders.length && !quiet) console.warn(`warning: still empty placeholders (draw() {}): ${placeholders.join(', ')}`);
   if (!quiet) console.log(`built ${bundle} (${scenes.length} scenes, ${(bytes / 1e6).toFixed(1)} MB)${skipped.length ? `; left out (did not compile): ${skipped.join(', ')}` : ''}`);
-  return { bundle, bytes, scenes, skipped };
+  return { bundle, bytes, scenes, skipped, placeholders };
 }
 
 function writeScenesIndex(project, buildDir, scenes, stubs = {}) {

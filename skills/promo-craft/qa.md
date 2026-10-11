@@ -23,6 +23,7 @@ What each check measures, its threshold, and the stage that fixes a failure.
 
 | check | pass | fix |
 |---|---|---|
+| content | no scene is still a placeholder (`draw() {}`) — error; a final frame with luminance spread < 20 is flagged as nearly empty | write the scene |
 | clipping | nothing cut off at the frame edge (2-unit tolerance) | scene layout |
 | vertical safe zone | text within y 250–1750 | scene `vert` layout |
 | overlaps | warnings only — no text covered | judge on the still |

@@ -57,7 +57,7 @@ Each writer edits only its own file, renders with its own private build (`--tag`
 
 **One by one.** Read `${CLAUDE_PLUGIN_ROOT}/agents/scene-writer.md` and follow it yourself for each scene in film order (the shared build is fine here; `--tag` is optional).
 
-Done when every scene has a writer report (or your own equivalent) with layout errors 0.
+Done when every scene has a writer report (or your own equivalent) and `layout --format <primary>` reports 0 errors for the whole film — it fails on any scene still left as a placeholder.
 
 ## 4. Review
 
